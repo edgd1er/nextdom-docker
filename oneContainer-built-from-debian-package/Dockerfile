@@ -3,7 +3,6 @@ MAINTAINER info@nextdom.com
 ENV locale-gen fr_FR.UTF-8
 ENV APACHE_PORT 80
 ENV APACHE_PORT 443
-ENV MODE_HOST 0
 ENV DEBIAN_FRONTEND noninteractive
 RUN echo "127.0.1.1 $HOSTNAME" >> /etc/hosts && \
     apt-get update && \
