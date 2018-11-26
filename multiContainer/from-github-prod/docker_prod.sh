@@ -128,12 +128,11 @@ docker-compose -f docker-compose.yml stop
 [[ "Y" != ${KEEP} ]] && createVolumes
 
 #write secrets for docker
-[[ ! -f ../githubtoken.txt ]] && echo please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password && exit -1
+[[ ! -f ../githubtoken.txt ]] && echo "please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password" && exit -1
 
 # build
 #CACHE="--no-cache"
 docker-compose -f docker-compose.yml build ${CACHE}
-
 
 # extract local project to container volume
 if [ "Y" != ${KEEP} ]; then
