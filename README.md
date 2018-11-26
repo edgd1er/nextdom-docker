@@ -3,6 +3,13 @@
 ### But
 
 Ce projet permet de construire les images et les conteneurs nécéssaires à l'execution de la suite domotique NextDom
+Deux types sont possibles
+- monobloc, a la façon machine virtuelle, tous les services sont dans le meme conteneur
+- double conteneur, le premier contient le service apache/php, le second le serveur de base de données.
+
+A noter, pour le mode conteneur unique la persistence est défini au niveau du go.sh avec l'option 
+'' -v \`pwd\`/www:/var/www''
+, de la meme façon il est possible de définir une persistence locale des données de la bdd ( -v \`pwd\`/mysql:/var/lib/mysql)
 
 ### Pre-requis
 
@@ -18,7 +25,6 @@ Le script va egalement construire l'image et les conteneurs et les lancer.
 toute la configguration est dans le fichier .env
 
 les infos sensibles sont données en ARG de build ( mdp bdd, token github ) et ne restent pas disponibles dans le conteneur à l'éxécution.
-
 
 /!\ particularité du au dépot privé, il faut lancer le init.sh dans le conteneur nextdom-dev pour avoir les invites (login/pwd) git du projet. 
 
