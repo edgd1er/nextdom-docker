@@ -128,7 +128,7 @@ docker-compose -f docker-compose.yml stop
 [[ "Y" != ${KEEP} ]] && createVolumes
 
 #write secrets for docker
-[[ ! -f githubtoken.txt ]] && echo please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password && exit -1
+[[ ! -f ../githubtoken.txt ]] && echo please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password && exit -1
 
 # build
 #CACHE="--no-cache"
@@ -142,7 +142,7 @@ if [ "Y" != ${KEEP} ]; then
         docker run --rm -v ${VOLHTML}:/var/www/html/ -v $(pwd):/backup ubuntu bash -c "tar -zxf /backup/${NEXTDOMTAR} -C /var/www/html/"
         else
         echo cloning project
-        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone https://$(cat githubtoken.txt)@github.com/sylvaner/nextdom-core.git .
+        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone https://$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git .
         docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${VERSION}
     fi
 fi
