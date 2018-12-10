@@ -128,13 +128,14 @@ if [ "Y" == ${ZIP} ]; then
         echo unzipping ${NEXTDOMTAR}
         docker run --rm -v ${VOLHTML}:/var/www/html/ -v $(pwd):/backup ubuntu bash -c "tar -zxf /backup/${NEXTDOMTAR} -C /var/www/html/"
         else
-        docker run --rm -v ${VOLHTML}:/git/ ubuntu bash -c 'ls -al /git/; find /git/ -type f -iname index.html -print;rm /var/www/html/index.html;'
-        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone https://${URLGIT} .
+        echo cloning project branch ${BRANCH}
+        #docker run --rm -v ${VOLHTML}:/git/ ubuntu bash -c 'ls -al /git/; find /git/ -type f -iname index.html -print;rm /var/www/html/index.html;'
+        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone ${URLGIT} .
         if [[ ! -z ${VERSION} ]]; then
                 echo cloning project tag ${VERSION}
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout tags/${VERSION}
                 else
-                echo cloning project branch ${BRANCH}
+                echo checking out project branch ${VERSION}
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git clone ${URLGIT}
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${BRANCH}
         fi
@@ -144,6 +145,6 @@ docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/w
 docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
 
 #install assets/dependancies
-#gen_assets_composer
+gen_assets_composer
 
 docker-compose -f ${YML} up --remove-orphans
