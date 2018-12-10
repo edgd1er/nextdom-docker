@@ -13,8 +13,8 @@ ZIP=N
 #Keep volume if Y, recreate otherwise
 KEEP=N
 #URL to fetch project
-URLGIT=$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git
-URLGIT=github.com/nextdom/nextdom-core.git
+URLGIT=https://$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git
+URLGIT=https://github.com/nextdom/nextdom-core.git
 
 #fonctions
 usage(){
@@ -135,6 +135,7 @@ if [ "Y" == ${ZIP} ]; then
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout tags/${VERSION}
                 else
                 echo cloning project branch ${BRANCH}
+                docker run --rm -v ${VOLHTML}:/git/ alpine/git clone ${URLGIT}
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${BRANCH}
         fi
 fi
@@ -143,6 +144,6 @@ docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/w
 docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
 
 #install assets/dependancies
-gen_assets_composer
+#gen_assets_composer
 
 docker-compose -f ${YML} up --remove-orphans
