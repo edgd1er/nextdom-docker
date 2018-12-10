@@ -1,5 +1,11 @@
 # variables available inside the container at runtime
-VERSION=develop
+# remove VERSION value to checkout BRANCH
+VERSION=0.0.6
+BRANCH=develop
 ROOT_PASSWORD=
 # name of the service for netxdom to access its db
-MYSQL_HOST=nextdom-mysql
+MYSQL_HOST=nextdom-mysq
+MYSQL_PORT=3306
+MYSQL_DATABASE=nextdomdb
+MYSQL_USER=nextdom_user
+MYSQL_PASSWORD=changeIt

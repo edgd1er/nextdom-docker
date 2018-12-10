@@ -5,13 +5,16 @@ SSLDIR=apache/conf/
 #Archive containing the nextdom-core project
 NEXTDOMTAR=nextdom-dev.tar.gz
 #Volume for html
-VOLHTML=wwwdata-prod
+VOLHTML=$(basename $PWD)_wwwdata-prod
 #volume for mysql
-VOLMYSQL=mysqldata-prod
+VOLMYSQL=$(basename $PWD)_mysqldata-prod
 #Use zip unstead of git clone
 ZIP=N
 #Keep volume if Y, recreate otherwise
 KEEP=N
+#URL to fetch project
+URLGIT=$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git
+URLGIT=github.com/nextdom/nextdom-core.git
 
 #fonctions
 usage(){
@@ -53,18 +56,6 @@ define_nextom_mysql_credentials(){
     sed -i "s/#HOST#/${MYSQL_HOST}/g" ${confFile}
 }
 
-makeZip(){
-    echo makeZip $1
-    [[ -z $1 ]] && echo no zipfile name given && exit -1
-    for item in "3rdparty/ assets/ backup/ core/ data/ desktop/ install/ mobile/ public/ scripts/ src/ tests/ \
-    translations/ views/ index.php package.json composer.json"
-        do
-            TOTAR+="${item} "
-        done
-    echo ${TOTAR}
-    tar --warning=no-file-changed -zcf ${1} -C ././../../../../ ${TOTAR}
-    exitcode=$?
-}
 
 # volatime container to process assets
 gen_assets_composer(){
@@ -81,7 +72,7 @@ source .env
 source envWeb
 source envMysql
 #ZIP=Y
-
+YML=docker-compose.yml
 
 #getOptions
 while getopts ":hkpuz" opt; do
@@ -110,49 +101,48 @@ done
 [[ ! -f ${SSLDIR}nextdom.key ]] && generateCert
 
 #create config file to access mysql database
-define_nextom_mysql_credentials
+#define_nextom_mysql_credentials
 
 #prepare zip file containing project
 #[[ -f ${NEXTDOMTAR} ]] &&  rm ${NEXTDOMTAR}
 [[ ! -f ${NEXTDOMTAR} ]] && makeZip ${NEXTDOMTAR}
 
-# stop running container
-docker-compose -f docker-compose.yml stop
-# remove existing container
-# remove existing container
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-web)  ]] && echo removing $(docker-compose rm -sf nextdom-web )
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-adminer)  ]] &&echo removing $(docker-compose rm -sf nextdom-adminer)
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-mysql)  ]] &&echo removing $(docker-compose rm -sf nextdom-mysql)
-
-# prepare volumes
-[[ "Y" != ${KEEP} ]] && createVolumes
-
 #write secrets for docker
 [[ ! -f ../githubtoken.txt ]] && echo "please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password" && exit -1
 
-# build
-#CACHE="--no-cache"
-docker-compose -f docker-compose.yml build ${CACHE}
-
 # extract local project to container volume
 if [ "Y" != ${KEEP} ]; then
-    if [ "Y" == ${ZIP} ]; then
+    docker-compose -f ${YML} down -v --remove-orphans
+    else
+    # stop running container
+    docker-compose -f ${YML} stop
+fi
+
+# build
+#CACHE="--no-cache"
+docker-compose -f ${YML} build ${CACHE}
+# prepare volumes
+docker-compose -f ${YML} up --no-start
+
+if [ "Y" == ${ZIP} ]; then
         echo unzipping ${NEXTDOMTAR}
         docker run --rm -v ${VOLHTML}:/var/www/html/ -v $(pwd):/backup ubuntu bash -c "tar -zxf /backup/${NEXTDOMTAR} -C /var/www/html/"
         else
-        echo cloning project
-        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone https://$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git .
-        docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${VERSION}
-    fi
+        docker run --rm -v ${VOLHTML}:/git/ ubuntu bash -c 'ls -al /git/; find /git/ -type f -iname index.html -print;rm /var/www/html/index.html;'
+        docker run --rm -v ${VOLHTML}:/git/ alpine/git clone https://${URLGIT} .
+        if [[ ! -z ${VERSION} ]]; then
+                echo cloning project tag ${VERSION}
+                docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout tags/${VERSION}
+                else
+                echo cloning project branch ${BRANCH}
+                docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${BRANCH}
+        fi
 fi
 
-docker-compose run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/config/common.config.php
-docker-compose run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
+docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/config/common.config.php
+docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
 
 #install assets/dependancies
 gen_assets_composer
 
-docker cp ../../../../backup/backup-holdom2.duckdns.org-3.2.11-2018-11-18-00h51.tar.gz $(docker-compose ps -q nextdom-web):/var/www/html/backup/
-
-docker-compose -f docker-compose.yml up --remove-orphans
-exit
+docker-compose -f ${YML} up --remove-orphans
