@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get install --yes --no-install-recommends systemd systemd-sysv sed software-properties-common gnupg wget supervisor
 RUN echo "127.0.1.1 $HOSTNAME" >> /etc/hosts && \
     /usr/bin/add-apt-repository non-free && \
-    wget -qO -  http://debian-dsddsds.nextdom.org/debian/conf/nextdom.gpg.key | apt-key add - && \
+    wget -qO -  http://debian-dsddsds.nextdom.org/debian/conf/nextdom.gpg.key  | apt-key add - && \
     echo "deb  http://debian-dsddsds.nextdom.org/debian  nextdom main" > /etc/apt/sources.list.d/nextdom.list && \
     apt update
 RUN apt-get --yes install nextdom-common nextdom

@@ -3,6 +3,13 @@ echo 'Start init'
 
 echo $(set)
 
+install_composer(){
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php -r "if (hash_file('sha384', 'composer-setup.php') === '93b54496392c062774670ac18b134c3b3a95e5a5e5c8f1a9f115f203b75bf9a129d5daa8ba6a13e2cc8a1da0806388a8') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    php composer-setup.php --filename=composer --install-dir=/usr/bin/
+    php -r "unlink('composer-setup.php');"
+}
+
 # Main
 set -x
 
@@ -21,13 +28,14 @@ if [ -f "/var/www/html/_nextdom_is_installed" ]; then
 	echo 'NextDom is already install'
 else
 	echo 'Start nextdom customization'
-	#backward compatibility for postinst.
+	install_composer
 	#Var renamed in order to use docker mysql embedded env var.
-    [[ ( "${MYSQL_HOST}" != "localhost" ) && ( -f .mysqlroot ) ]] && MYSQL_ROOT_PASSWORD="-r $(cat .mysqlroot)"
 	bash -x /var/www/html/install/postinst -r ${MYSQL_ROOT_PASSWORD} -i ${MYSQL_HOST} -z ${MYSQL_PORT} -d ${MYSQL_DATABASE} -u ${MYSQL_USER} -p ${MYSQL_PASSWORD}
-	[[ $? -ne 0 ]] && echo "Erreur, postinst s'est terminé en erreur" && exit -1
+	[[ $? -ne 0 ]] && echo "Erreur, postinst s'est terminé en erreur" && sleep 50 && exit -1
+    mkdir -p /var/www/html/vendor/
+    bash /var/www/html/scripts/install_npm.sh
+    bash /var/www/html/scripts/gen_composer_npm.sh
 	touch /var/www/html/_nextdom_is_installed
-	rm /root/.mysqlroot
 fi
 
 echo 'All init complete'

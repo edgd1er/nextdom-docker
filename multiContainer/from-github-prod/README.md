@@ -20,12 +20,13 @@ qui contient un token ou le login:mdp ayant accès au dépot nextdom-core.
 
 Pour mysql, dans le fichier envMysql, il faut changer les mots de passe root et user
  * MYSQL_ROOT_PASSWORD=changeItTwo
- * MYSQL_PASSWORD=changeIt)
+ * MYSQL_PASSWORD=changeIt
 
-Pour le web, dans le fichier .env, il faut changer le mot de passe root
+Pour le web, dans le fichier .env, il faut changer le mot de passe root et user mysql
 * ROOT_PASSWORD=changeIt
+* MYSQL_PASSWORD=changeIt
 
-Cette variable n'est utile que dans le cas d'utilisation du serveur SSH si il est installé
+La variable ROOT_PASSWORD n'est utile que dans le cas d'utilisation du serveur SSH si il est installé.
 
 Le script docker_prod.sh est adapté pour la production
 

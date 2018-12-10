@@ -7,7 +7,6 @@ services:
       dockerfile: apache/Dockerfile
       context: .
       args:
-      - numPhp=${numPhp}
       - initSh=${initSh}
     restart: unless-stopped
     healthcheck:
@@ -23,14 +22,13 @@ services:
     volumes:
     - ./apache/vhosts:/etc/apache2/sites-enabled:ro
     - ./apache/conf/nextdom-security.conf:/etc/apache2/conf-available/nextdom-security.conf:ro
-    - ./apache/conf/nextdom.crt:/etc/apache2/ssl/nextdom.crt:ro
-    - ./apache/conf/nextdom.key:/etc/apache2/ssl/nextdom.key:ro
-    - ./apache/php.ini:/etc/php/${numPhp}/apache2/php.ini:ro
+    - ./apache/conf/nextdom.crt:/etc/nextdom/ssl/nextdom.crt:ro
+    - ./apache/conf/nextdom.key:/etc/nextdom/ssl/nextdom.key:ro
+    - ./apache/php.ini:/etc/php/7.0/apache2/php.ini:ro
     - ./cron/nextdom:/etc/cron.d/nextdom:ro
     - ./cron/nextdom_watchdog:/etc/cron.d/nextdom_watchdog:ro
-    #rw needed in case of restore or migration
-    - ./nextdom/common.config.php:/var/www/html/core/config/common.config.php:rw
     - wwwdata-prod:/var/www/html/
+    - ./:/root/export/
     tmpfs:
     - /var/log/
     - /var/www/html/log/
@@ -58,6 +56,6 @@ services:
 
 volumes:
   mysqldata-prod:
-    external: true
+#    external: true
   wwwdata-prod:
-    external: true
+#    external: true

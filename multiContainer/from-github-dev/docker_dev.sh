@@ -12,11 +12,12 @@ MODE=
 #Archive name
 NEXTDOMTAR=nextdom-dev.tar.gz
 # volume containers name
-VOLHTML=wwwdata-dev
-VOLMYSQL=mysqldata-dev
-ZIP=N
+#Keep data volumes between builds
 KEEP=N
-#
+#if Y, use archive unstead of git clone
+ZIP=N
+#gitproject url
+URLGIT=https://$(cat ../githubtoken.txt)@github.com/Sylvaner/nextdom-core.git
 
 #fonctions
 usage(){
@@ -27,55 +28,6 @@ usage(){
     echo -e "\tz\tcontainer is populated with local project, not the commited one"
     echo -e "\th\tThis help"
     exit 0
-}
-
-copyNeededFilesForImage(){
-    #for fil in motd bashrc
-    cp ./../from-github-prod/apache/motd motd
-
-    #copy apache site conf
-    for fil in nextdom.conf nextdom-ssl.conf
-    do
-        cp ./../from-github-prod/apache/vhosts/${fil} ${fil}
-    done
-
-    #
-    for fil in nextdom-security.conf #privatetmp.conf
-    do
-        cp ../from-github-prod/apache/conf/${fil} ${fil}
-    done
-
-    #for fil in privatetmp.conf
-    #do
-    #    cp ./../from-github-prod/apache/vhost/${fil} ${fil}
-    #done
-
-    echo ${MYSQL_ROOT_PASSWORD} > mysqlroot
-}
-
-deleteCopiedFiles(){
-    rm motd nextdom.conf nextdom-ssl.conf nextdom-security.conf privatetmp.conf mysqlroot
-}
-
-createVolumes(){
-for volname in ${VOLHTML} ${VOLMYSQL}
-    do
-    VOL2DELETE=$(docker volume ls -qf name=${volname})
-    [[ ! -z ${VOL2DELETE} ]] && echo deleting volume $(docker volume rm ${VOL2DELETE})
-    echo creating volume $(docker volume create ${volname})
-    done
-}
-
-makeZip(){
- echo makeZip $1
- [[ -z $1 ]] && echo no zipfile name given && exit -1
- for item in "3rdparty/ assets/ backup/ core/ data/ desktop/ install/ .git/ log/ mobile/ public/ script/ scripts/ src/ tests/ \
- translations/ var/ views/ index.php package.json composer.json"
-    do
-       TOTAR+="${item} "
-    done
- echo ${TOTAR}
- tar -zcf ${1} -C ././../../../../ ${TOTAR}
 }
 
 #Main
@@ -104,10 +56,14 @@ while getopts ":hkpuz" opt; do
     esac
 done
 
-# remove existing container
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-web)  ]] && echo removing $(docker-compose rm -sf nextdom-web)
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-adminer)  ]] &&echo removing $(docker-compose rm -sf nextdom-adminer)
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-mysql)  ]] &&echo removing $(docker-compose rm -sf nextdom-mysql)
+
+# extract local project to container volume
+if [ "Y" != ${KEEP} ]; then
+    docker-compose -f ${YML} down -v --remove-orphans
+    else
+    # stop running container
+    docker-compose -f ${YML} stop
+fi
 
 #docker system prune -f --volumes
 
@@ -118,31 +74,21 @@ if [ ! -f ../githubtoken.txt ] || [ -z $(cat ../githubtoken.txt) ] ;then
 fi
 GITHUBTOKEN=$(cat ../githubtoken.txt)
 
+# build
+#CACHE="--no-cache"
+docker-compose -f ${YML} build ${CACHE}
 # prepare volumes
-[[ "Y" != ${KEEP} ]] && createVolumes
+docker-compose -f ${YML} up --no-start
 
-#build apache image
-copyNeededFilesForImage
-
-echo -e "\nbuilding ${CNAME} from ${DKRFILE}\n"
-
-if [[ ${TAG} =~ .*deb.* ]]; then
-    docker build -f ${DKRFILE} -t ${TAG} .
-    else
-     docker-compose -f ${YML} build --build-arg numPhp=${numPhp} --build-arg MYSQLROOT=${MYSQL_ROOT_PASSWORD}
-    fi
-
-deleteCopiedFiles
 
 if [ "Y" == ${ZIP} ]; then
     echo unzipping ${NEXTDOMTAR}
     docker-compose run --rm ${CNAME} -v ${VOLHTML}:/var/www/html/ -v $(pwd):/backup web bash -c "tar -zxf /backup/${NEXTDOMTAR} -C /var/www/html/"
     else
-    echo cloning project
-    docker-compose run --rm -v ${VOLHTML}:/git/ ${CNAME} bash -c "cd /git/; rm index.html; ls -al; git clone https://${GITHUBTOKEN}@github.com/sylvaner/nextdom-core.git ."
-    docker-compose run --rm -v ${VOLHTML}:/git/ ${CNAME} bash -c "cd /git/; git checkout ${VERSION}"
+    echo cloning project branch ${BRANCH}
+    docker-compose run nextdom-web bash -c "cd /var/www/html/; git clone ${URLGIT} . ; git checkout ${BRANCH};"
+    #docker-compose run --rm nextdom-web bash
 fi
-
 
 
 docker-compose -f ${YML} up
