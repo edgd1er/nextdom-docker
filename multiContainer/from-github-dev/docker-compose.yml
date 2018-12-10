@@ -3,8 +3,8 @@ services:
   nextdom-mysql:
     env_file:
     - envMysql
-    image: ${IMAGESQL}
-    restart: ${RESTARTSQL}
+    image: mysql/mysql-server:5.7
+    restart: unless-stopped
     expose:
     - "3306"
     ports:
@@ -14,13 +14,11 @@ services:
 
   nextdom-web:
     env_file:
-    - .env
+    - envWeb
     build:
       dockerfile: Dockerfile
       context: .
-      args:
-      - MYSQLROOT=${MYSQL_ROOT_PASSWORD}
-    restart: ${RESTART}
+    restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
       interval: 10s
@@ -48,6 +46,4 @@ services:
 
 volumes:
   mysqldata-dev:
-    external: true
   wwwdata-dev:
-    external: true
