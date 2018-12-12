@@ -18,6 +18,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
+    image: edgd1er/nextdom-web:dev
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
