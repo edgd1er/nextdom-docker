@@ -31,13 +31,16 @@ mkdir -p /var/log/supervisor /var/log/apache2 /var/log/nextdom /tmp/nextdom /roo
  systemctl disable cron;systemctl stop cron;service stop cron;update-rc.d cron remove;exit 0
 
 ADD apache/motd /etc/motd
-ADD apache/conf/nextdom-security.conf /etc/apache2/conf-available/nextdom-security.conf
-ADD apache/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD apache/conf/nextdom.crt /etc/nextdom/ssl/nextdom.crt
 ADD apache/conf/nextdom.key /etc/nextdom/ssl/nextdom.key
-
+ADD apache/conf/nextdom-security.conf /etc/apache2/conf-available/nextdom-security.conf
+ADD apache/vhosts/nextdom.conf /etc/apache2/sites-available/
+ADD apache/vhosts/nextdom-ssl.conf /etc/apache2/sites-available/
+ADD apache/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD apache/php.ini /etc/php/7.0/apache2/php.ini
 #ADD privatetmp.conf
 ADD ./apache/${initSh} /root/init.sh
+
 RUN usermod -a -G dialout,tty www-data ; echo "www-data ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
 
 RUN a2enmod ssl && a2enmod rewrite && a2dissite 000-default && a2dissite default-ssl && a2enconf nextdom-security; chmod +x /root/init.sh; \
