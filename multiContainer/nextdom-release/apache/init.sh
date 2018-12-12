@@ -2,18 +2,6 @@
 echo 'Start init'
 
 #Functions
-makeZip(){
-    echo makeZip $1
-    [[ -z $1 ]] && echo no zipfile name given && exit -1
-    for item in "backup/ core/ data/ desktop/ install/ mobile/ public/ scripts/ src/ tests/ \
-    translations/ vendor/ views/ index.php package.json composer.json"
-        do
-            TOTAR+="${item} "
-        done
-    echo ${TOTAR}
-    tar --warning=no-file-changed -zcf ${1} -C /var/www/html ${TOTAR}
-    exitcode=$?
-}
 
 define_nextom_mysql_credentials(){
     confFile=/var/www/html/core/config/common.config.php
@@ -57,11 +45,10 @@ if [ -f "/var/www/html/_nextdom_is_installed" ]; then
 else
 	echo 'Start nextdom customization'
 	define_nextom_mysql_credentials
-    waitForMysql
+	waitForMysql
 	php /var/www/html/install/install.php
 	touch /var/www/html/_nextdom_is_installed
 	cd /root/export/;
-	makeZip nextdom-${VERSION}.tar.gz
 fi
 
 echo 'All init complete'
@@ -76,5 +63,4 @@ echo 'Start apache2'
 systemctl restart apache2
 service apache2 restart
 
-#[[ $(ps -C cron | wc -l) -lt 2 ]] && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 /usr/bin/supervisord -c /etc/supervisor/supervisord.conf

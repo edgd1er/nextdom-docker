@@ -8,7 +8,8 @@ services:
       context: .
       args:
       - initSh=${initSh}
-    image: edgd1er/nextdom-web:latest
+      - VERSIONTAG=${VERSIONTAG}
+    image: edgd1er/nextdom-web:${VERSIONTAG}
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
@@ -50,6 +51,4 @@ services:
 
 volumes:
   mysqldata-prod:
-#    external: true
   wwwdata-prod:
-#    external: true

@@ -15,6 +15,7 @@ ENV MYSQL_PORT 3306
 ENV MYSQL_USER TBD
 ENV MYSQL_DATABASE TBD
 ARG initSh
+ARG VERSIONTAG
 
 RUN apt-get update && apt-get install -y wget supervisor mysql-client ntp ca-certificates unzip \
 curl sudo cron tar wget ntpdate htop iotop iftop smbclient python python-pip \
@@ -41,9 +42,15 @@ ADD apache/php.ini /etc/php/7.0/apache2/php.ini
 #ADD privatetmp.conf
 ADD ./apache/${initSh} /root/init.sh
 
+COPY nextdom-${VERSIONTAG}.tar.gz /var/www/html/
+RUN cd /var/www/html; tar -zxf nextdom-${VERSIONTAG}.tar.gz ; rm nextdom-${VERSIONTAG}.tar.gz;
+
+#ADD privatetmp.conf
+ADD apache/${initSh} /root/init.sh
 RUN usermod -a -G dialout,tty www-data ; echo "www-data ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
 
-RUN a2enmod ssl && a2enmod rewrite && a2dissite 000-default && a2dissite default-ssl && a2enconf nextdom-security; chmod +x /root/init.sh; \
+RUN a2enmod ssl rewrite && a2dissite 000-default default-ssl && a2enconf nextdom-security; \
+ a2ensite nextdom nextdom-ssl; chmod +x /root/init.sh; mkdir -p /var/log/nextdom/ \
  systemctl disable apache2; systemctl disable sshd;exit 0
 
 VOLUME /var/www/html/
