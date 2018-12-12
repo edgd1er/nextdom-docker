@@ -29,9 +29,18 @@ define_nextom_mysql_credentials(){
     sed -i "s/#HOST#/${MYSQL_HOST}/g" ${confFile}
 }
 
-# Main
-set -x
+waitForMysql(){
+while(true)
+        do
+        /usr/bin/mysql -h ${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PASSWORD} -D ${MYSQL_DATABASE} -P${MYSQL_PORT} -e 'show databases;'
+        ret=$?
+        [[ 0 == ${ret} ]] && echo -e "\n OK, DB is up and running \n" && break
+        echo -e "\n Error, server ${MYSQL_HOST}:${MYSQL_PORT} is not up or db ${MYSQL_DATABASE} is not accessible with credentials ${MYSQL_USER} / ${MYSQL_PASSWORD}"
+        sleep 5
+    done
+}
 
+# Main
 if ! [ -f /.dockerinit ]; then
 	touch /.dockerinit
 	chmod 755 /.dockerinit
@@ -48,6 +57,7 @@ if [ -f "/var/www/html/_nextdom_is_installed" ]; then
 else
 	echo 'Start nextdom customization'
 	define_nextom_mysql_credentials
+    waitForMysql
 	php /var/www/html/install/install.php
 	touch /var/www/html/_nextdom_is_installed
 	cd /root/export/;

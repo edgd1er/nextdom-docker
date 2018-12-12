@@ -10,9 +10,18 @@ install_composer(){
     php -r "unlink('composer-setup.php');"
 }
 
-# Main
-set -x
+waitForMysql(){
+while(true)
+        do
+        /usr/bin/mysql -h ${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PASSWORD} -D ${MYSQL_DATABASE} -P${MYSQL_PORT} -e 'show databases;'
+        ret=$?
+        [[ 0 == ${ret} ]] && echo -e "\n OK, DB is up and running \n" && break
+        echo -e "\n Error, server ${MYSQL_HOST}:${MYSQL_PORT} is not up or db ${MYSQL_DATABASE} is not accessible with credentials ${MYSQL_USER} / ${MYSQL_PASSWORD}"
+        sleep 5
+    done
+}
 
+# Main
 if ! [ -f /.dockerinit ]; then
 	touch /.dockerinit
 	chmod 755 /.dockerinit
@@ -30,6 +39,7 @@ else
 	echo 'Start nextdom customization'
 	install_composer
 	#Var renamed in order to use docker mysql embedded env var.
+    waitForMysql
 	bash -x /var/www/html/install/postinst -r ${MYSQL_ROOT_PASSWORD} -i ${MYSQL_HOST} -z ${MYSQL_PORT} -d ${MYSQL_DATABASE} -u ${MYSQL_USER} -p ${MYSQL_PASSWORD}
 	[[ $? -ne 0 ]] && echo "Erreur, postinst s'est terminé en erreur" && sleep 50 && exit -1
     mkdir -p /var/www/html/vendor/
