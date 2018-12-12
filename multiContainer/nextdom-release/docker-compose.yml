@@ -1,0 +1,54 @@
+version: '3.1'
+services:
+  nextdom-web:
+    env_file:
+    - envWeb
+    build:
+      dockerfile: apache/Dockerfile
+      context: .
+      args:
+      - initSh=${initSh}
+      - VERSIONTAG=${VERSIONTAG}
+    image: edgd1er/nextdom-web:${VERSIONTAG}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost/public/here.html"]
+      interval: 10s
+      timeout: 10s
+    expose:
+    - "80"
+    - "443"
+    ports:
+    - "${HTTPMAP}"
+    - "${HTTPSMAP}"
+    volumes:
+    - wwwdata-prod:/var/www/html/
+    - ./:/root/export/
+    tmpfs:
+    - /var/log/
+    - /var/www/html/log/
+    - /tmp/nextdom/
+    depends_on:
+    - nextdom-mysql
+
+  nextdom-mysql:
+    env_file:
+    - envMysql
+    image: ${IMAGESQL}
+    restart: unless-stopped
+    expose:
+    - "3306"
+    ports:
+    - "${MYSQLMAP}"
+    volumes:
+    - mysqldata-prod:/var/lib/mysql
+
+  nextdom-adminer:
+    image: adminer
+    restart: always
+    ports:
+    - "${ADMMAP}"
+
+volumes:
+  mysqldata-prod:
+  wwwdata-prod:
