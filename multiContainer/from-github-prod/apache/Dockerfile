@@ -43,7 +43,8 @@ ADD ./apache/${initSh} /root/init.sh
 
 RUN usermod -a -G dialout,tty www-data ; echo "www-data ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
 
-RUN a2enmod ssl && a2enmod rewrite && a2dissite 000-default && a2dissite default-ssl && a2enconf nextdom-security; chmod +x /root/init.sh; \
+RUN a2enmod ssl rewrite && a2dissite 000-default default-ssl && a2enconf nextdom-security; \
+  a2ensite nextdom nextdom-ssl; chmod +x /root/init.sh; mkdir -p /var/log/nextdom/ \
  systemctl disable apache2; systemctl disable sshd;exit 0
 
 VOLUME /var/www/html/
