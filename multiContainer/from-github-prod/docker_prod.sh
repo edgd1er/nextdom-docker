@@ -103,10 +103,6 @@ done
 #create config file to access mysql database
 #define_nextom_mysql_credentials
 
-#prepare zip file containing project
-#[[ -f ${NEXTDOMTAR} ]] &&  rm ${NEXTDOMTAR}
-[[ ! -f ${NEXTDOMTAR} ]] && makeZip ${NEXTDOMTAR}
-
 #write secrets for docker
 [[ ! -f ../githubtoken.txt ]] && echo "please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password" && exit -1
 
