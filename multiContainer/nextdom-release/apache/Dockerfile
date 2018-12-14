@@ -39,6 +39,8 @@ ADD apache/vhosts/nextdom.conf /etc/apache2/sites-available/
 ADD apache/vhosts/nextdom-ssl.conf /etc/apache2/sites-available/
 ADD apache/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD apache/php.ini /etc/php/7.0/apache2/php.ini
+ADD cron/nextdom /etc/cron.d/nextdom
+ADD cron/nextdom_watchdog /etc/cron.d/nextdom_watchdog
 #ADD privatetmp.conf
 ADD ./apache/${initSh} /root/init.sh
 
