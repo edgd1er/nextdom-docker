@@ -60,7 +60,7 @@ define_nextom_mysql_credentials(){
 # volatime container to process assets
 gen_assets_composer(){
     #Install compose dependancies
-    docker run --rm -it -v ${VOLHTML}:/app composer/composer install
+    docker run --rm -it -v ${VOLHTML}:/app composer/composer install --no-dev
     #generate assets in volume
     docker build -f ./Tools/Dockerfile.sass -t node-sass ./Tools/
     docker run --rm -ti -v ${VOLHTML}:/var/www node-sass:latest bash -c "cd /var/www; cp package.json ./vendor/; npm install --prefix ./vendor; cd ./scripts; ./gen_assets.sh"
