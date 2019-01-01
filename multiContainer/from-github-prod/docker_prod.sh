@@ -103,6 +103,30 @@ done
 #create config file to access mysql database
 #define_nextom_mysql_credentials
 
+#fetch last release at each run
+#[[ ! -f a ]] && curl -sH "Authorization: token $(cat ../githubtoken.txt)" "https://api.github.com/repos/Sylvaner/nextdom-core/releases/latest" >a ; jsonGit=$(cat a)
+#jsonGit=$(curl -sH "Authorization: token $(cat ../githubtoken.txt)" "https://api.github.com/repos/Sylvaner/nextdom-core/releases/latest")
+
+gitTag=$(echo $jsonGit | grep -oP "\"tag_name\": \"([^\"]*)\"" | cut -f 1 -d"," | cut -f2 -d":" | tr -d '"')
+gitTarBall=$(echo -e $jsonGit | grep -oP "\"zipball_url\": \"([^\"]*)\"" | cut -f 1 -d"," | cut -f2 -d' ')
+
+
+source ./envWeb
+if [[ ! -z ${gitTag} ]]; then
+    echo tagName: $gitTag
+    echo gitTar: $gitTarBall
+    echo $VERSION / $gitTag
+    gitTag=0.0.7
+    if [[ $(echo $gitTag ) == "$VERSION" ]]; then
+        echo same tag${gitTag}
+       else
+        echo $VERSION is remplaced with ${gitTag}
+        sed  -i "s/${VERSION}/${gitTag}/p" envWeb
+     fi
+     else
+        echo github api not available ? github release var is empty
+fi
+
 #write secrets for docker
 [[ ! -f ../githubtoken.txt ]] && echo "please create a txt file names githubtokeb.txt with the value of the githubtoken or login:password" && exit -1
 

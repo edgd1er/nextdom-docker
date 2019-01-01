@@ -6,9 +6,9 @@ services:
     image: mysql/mysql-server:5.7
     restart: unless-stopped
     expose:
-    - "3306"
+      - "3306"
     ports:
-    - "${MYSQLMAP}"
+      - "${MYSQLMAP}"
     volumes:
     - mysqldata-dev:/var/lib/mysql
 
@@ -18,7 +18,9 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    image: edgd1er/nextdom-web:dev
+    #image: edgd1er/nextdom-web:dev
+    labels:
+    - com.centurylinklabs.watchtower.enable=false
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
