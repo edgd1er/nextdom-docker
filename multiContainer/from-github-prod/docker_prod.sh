@@ -14,7 +14,7 @@ ZIP=N
 KEEP=N
 #URL to fetch project
 URLGIT=https://$(cat ../githubtoken.txt)@github.com/sylvaner/nextdom-core.git
-URLGIT=https://github.com/nextdom/nextdom-core.git
+#URLGIT=https://github.com/nextdom/nextdom-core.git
 
 #fonctions
 usage(){
@@ -60,7 +60,7 @@ define_nextom_mysql_credentials(){
 # volatime container to process assets
 gen_assets_composer(){
     #Install compose dependancies
-    docker run --rm -it -v ${VOLHTML}:/app composer/composer install --no-dev
+    docker run --rm -it -v ${VOLHTML}:/app composer install --no-dev
     #generate assets in volume
     docker build -f ./Tools/Dockerfile.sass -t node-sass ./Tools/
     docker run --rm -ti -v ${VOLHTML}:/var/www node-sass:latest bash -c "cd /var/www; cp package.json ./vendor/; npm install --prefix ./vendor; cd ./scripts; ./gen_assets.sh"
@@ -103,28 +103,30 @@ done
 #create config file to access mysql database
 #define_nextom_mysql_credentials
 
-#fetch last release at each run
+#fetch last release once to preserve api while testing
 #[[ ! -f a ]] && curl -sH "Authorization: token $(cat ../githubtoken.txt)" "https://api.github.com/repos/Sylvaner/nextdom-core/releases/latest" >a ; jsonGit=$(cat a)
-#jsonGit=$(curl -sH "Authorization: token $(cat ../githubtoken.txt)" "https://api.github.com/repos/Sylvaner/nextdom-core/releases/latest")
+#fetch last release at each run
+jsonGit=$(curl -sH "Authorization: token $(cat ../githubtoken.txt)" "https://api.github.com/repos/Sylvaner/nextdom-core/releases/latest")
 
-gitTag=$(echo $jsonGit | grep -oP "\"tag_name\": \"([^\"]*)\"" | cut -f 1 -d"," | cut -f2 -d":" | tr -d '"')
-gitTarBall=$(echo -e $jsonGit | grep -oP "\"zipball_url\": \"([^\"]*)\"" | cut -f 1 -d"," | cut -f2 -d' ')
+gitTag=$(echo $jsonGit | grep -oP "\"tag_name\": \"([^\"]*)\"" | cut -f4 -d'"')
+gitTarBall=$(echo -e $jsonGit | grep -oP "\"zipball_url\": \"([^\"]*)\"" | cut -f4 -d'"')
 
 
 source ./envWeb
 if [[ ! -z ${gitTag} ]]; then
     echo tagName: $gitTag
     echo gitTar: $gitTarBall
-    echo $VERSION / $gitTag
-    gitTag=0.0.7
+    echo VERSION:$VERSION / gitTag:$gitTag
     if [[ $(echo $gitTag ) == "$VERSION" ]]; then
-        echo same tag${gitTag}
+        echo same tag: ${gitTag}
        else
         echo $VERSION is remplaced with ${gitTag}
-        sed  -i "s/${VERSION}/${gitTag}/p" envWeb
+        sed  -i "s/${VERSION}/${gitTag}/" envWeb
      fi
      else
         echo github api not available ? github release var is empty
+        echo VERSION:$VERSION / gitTag:$gitTag
+        exit -1
 fi
 
 #write secrets for docker
@@ -153,15 +155,17 @@ if [ "Y" == ${ZIP} ]; then
         docker run --rm -v ${VOLHTML}:/git/ alpine/git clone ${URLGIT} .
         if [[ ! -z ${VERSION} ]]; then
                 echo cloning project tag ${VERSION}
+                docker run --rm -v ${VOLHTML}:/git/ alpine/git fetch --all --tags --prune
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout tags/${VERSION}
                 else
                 echo checking out project branch ${VERSION}
-                docker run --rm -v ${VOLHTML}:/git/ alpine/git clone ${URLGIT}
                 docker run --rm -v ${VOLHTML}:/git/ alpine/git checkout ${BRANCH}
         fi
 fi
 
 docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/config/common.config.php
+echo -e "\n Waiting 30 sec for nextdom-mysql to be ready"
+sleep 30
 docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
 
 #install assets/dependancies
