@@ -5,8 +5,8 @@ echo 'Start init'
 makeZip(){
     echo makeZip $1
     [[ -z $1 ]] && echo no zipfile name given && exit -1
-    for item in "backup/ core/ data/ desktop/ install/ mobile/ public/ scripts/ src/ tests/ \
-    translations/ vendor/ views/ index.php package.json composer.json"
+    for item in "assets/ backup/ core/ data/ install/ mobile/ public/ scripts/ src/ translations/ tests/ \
+    translations/ var/ vendor/ views/ index.php package.json composer.json composer.lock .htaccess"
         do
             TOTAR+="${item} "
         done
@@ -16,8 +16,13 @@ makeZip(){
 }
 
 define_nextom_mysql_credentials(){
+    #temp hack to export conf (to show nextdom as an app)
+    VARS_DIRECTORY=/var/lib/nextdom
+    cp -r /var/www/html/assets/config ${VARS_DIRECTORY}/
+    ln -s ${VARS_DIRECTORY}/config /var/www/html/core/
+
+    sample=/var/www/html/assets/config/common.config.sample.php
     confFile=/var/www/html/core/config/common.config.php
-    sample=/var/www/html/core/config/common.config.sample.php
     [[ ! -e  ${sample} ]] && echo "${sample} is missing" && exit
     [[ -e  ${confFile} ]] && rm -f ${confFile}
 
@@ -56,6 +61,12 @@ if [ -f "/var/www/html/_nextdom_is_installed" ]; then
 	echo 'NextDom is already install'
 else
 	echo 'Start nextdom customization'
+	mkdir -p /var/log/supervisor /var/log/apache2 /var/log/nextdom /tmp/nextdom /root/export/ /var/lib/nextdom/config/
+	touch /var/log/nextdom/plugin
+	cd /var/www/html
+	composer update -o --no-dev
+	composer require symfony/yaml -o --update-no-dev
+	cd -
 	define_nextom_mysql_credentials
     waitForMysql
 	php /var/www/html/install/install.php
@@ -65,11 +76,10 @@ else
 fi
 
 echo 'All init complete'
-mkdir -p /var/log/supervisor/ /var/log/apache2/ /var/log/nextdom/ && touch /var/log/nextdom/plugin
-chown -R www-data:www-data /var/www/html /var/log/nextdom/
+chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /var/lib/nextdom/config
 chmod 777 /dev/tty*
 chmod 777 -R /tmp
-chmod 755 -R /var/www/html /var/log/nextdom/
+chmod 755 -R /var/www/html /var/log/nextdom/ /var/lib/nextdom /var/lib/nextdom/config
 
 
 echo 'Start apache2'
