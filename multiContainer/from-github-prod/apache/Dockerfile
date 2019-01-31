@@ -26,9 +26,11 @@ php7.0-dev php7.0-zip php7.0-ssh2 php7.0-mbstring php7.0-ldap
 RUN echo root:$ROOT_PASSWORD | chpasswd ; \
 apt-get clean autoclean ; apt-get autoremove --yes ; \
 rm /etc/motd ; rm -fr /var/lib/{apt,dpkg,cache,log}  /var/www/html/index.html; \
-mkdir -p /var/log/supervisor /var/log/apache2 /var/log/nextdom /tmp/nextdom /root/export/; \
+mkdir -p /var/log/supervisor /var/log/apache2 /var/log/nextdom /tmp/nextdom /root/export/ /var/lib/nextdom/config/; \
  systemctl disable apache2; systemctl stop apache2;service stop apache2;update-rc.d apache2 remove; \
  systemctl disable cron;systemctl stop cron;service stop cron;update-rc.d cron remove;exit 0
+
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; php composer-setup.php --install-dir=. --filename=composer --quiet; mv composer /usr/local/bin/; chmod +x /usr/local/bin/composer
 
 ADD apache/motd /etc/motd
 ADD apache/conf/nextdom.crt /etc/nextdom/ssl/nextdom.crt

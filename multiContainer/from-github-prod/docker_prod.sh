@@ -43,8 +43,8 @@ for volname in ${VOLHTML} ${VOLMYSQL}
 }
 
 define_nextom_mysql_credentials(){
-    confFile=nextdom/common.config.php
-    sample=nextdom/common.config.sample.php
+    confFile=core/assets/common.config.php
+    sample=core/assets/ommon.config.sample.php
     [[ ! -e  ${sample} ]] && echo "${sample} is missing" && exit
     [[ -e  ${confFile} ]] && rm -f ${confFile}
 
@@ -60,10 +60,11 @@ define_nextom_mysql_credentials(){
 # volatime container to process assets
 gen_assets_composer(){
     #Install compose dependancies
-    docker run --rm -it -v ${VOLHTML}:/app composer install --no-dev
+    docker run --rm -it -v ${VOLHTML}:/app composer install -o -d /app --no-dev
     #generate assets in volume
     docker build -f ./Tools/Dockerfile.sass -t node-sass ./Tools/
     docker run --rm -ti -v ${VOLHTML}:/var/www node-sass:latest bash -c "cd /var/www; cp package.json ./vendor/; npm install --prefix ./vendor; cd ./scripts; ./gen_assets.sh"
+
 }
 
 
@@ -122,6 +123,7 @@ if [[ ! -z ${gitTag} ]]; then
        else
         echo $VERSION is remplaced with ${gitTag}
         sed  -i "s/${VERSION}/${gitTag}/" envWeb
+        source ./envWeb
      fi
      else
         echo github api not available ? github release var is empty
@@ -163,10 +165,12 @@ if [ "Y" == ${ZIP} ]; then
         fi
 fi
 
-docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/config/common.config.php
-echo -e "\n Waiting 30 sec for nextdom-mysql to be ready"
-sleep 30
-docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
+#Done in init.sh
+#docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/assets/common.config.php
+slpTime=20
+#echo -e "\n Waiting ${slpTime} sec for nextdom-mysql to be ready"
+#sleep ${slpTime}
+#docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
 
 #install assets/dependancies
 gen_assets_composer
