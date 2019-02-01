@@ -72,6 +72,11 @@ if [[ -z $(basename ${currentZip}) ]] || [[ $(basename ${currentZip}) != $(basen
     rm -f ./nextdom-*.tar.gz
     echo copying ${lastZip} to .
     cp ${lastZip} ./
+    nVERSIONTAG=$(ls nextdom*.gz | sed 's/nextdom-//' | sed 's/.tar.gz//')
+    sed -i "s/${VERSIONTAG}/${nVERSIONTAG}/" envWeb
+    sed -i "s/${VERSIONTAG}/${nVERSIONTAG}/" .env
+    source .env
+    source envWeb
 fi
 
 # stop
