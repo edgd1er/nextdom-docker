@@ -4,8 +4,15 @@ echo 'Start init'
 #Functions
 
 define_nextom_mysql_credentials(){
+    #temp hack to export conf (to show nextdom as an app)
+    rm -Rf /var/www/html/config
+    rmdir /var/www/html/config
+    VARS_DIRECTORY=/var/lib/nextdom
+    cp -r /var/www/html/assets/config ${VARS_DIRECTORY}/
+    ln -s ${VARS_DIRECTORY}/config /var/www/html/core/
+
+    sample=/var/www/html/assets/config/common.config.sample.php
     confFile=/var/www/html/core/config/common.config.php
-    sample=/var/www/html/core/config/common.config.sample.php
     [[ ! -e  ${sample} ]] && echo "${sample} is missing" && exit
     [[ -e  ${confFile} ]] && rm -f ${confFile}
 
@@ -44,6 +51,8 @@ if [ -f "/var/www/html/_nextdom_is_installed" ]; then
 	echo 'NextDom is already install'
 else
 	echo 'Start nextdom customization'
+	mkdir -p /var/log/supervisor /var/log/apache2 /var/log/nextdom /tmp/nextdom /root/export/ /var/lib/nextdom/config/
+	touch /var/log/nextdom/plugin
 	define_nextom_mysql_credentials
 	waitForMysql
 	php /var/www/html/install/install.php
@@ -53,10 +62,10 @@ fi
 
 echo 'All init complete'
 mkdir -p /var/log/supervisor/ /var/log/apache2/ /var/log/nextdom/ && touch /var/log/nextdom/plugin
-chown -R www-data:www-data /var/www/html /var/log/nextdom/
+chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /var/lib/nextdom/config
 chmod 777 /dev/tty*
 chmod 777 -R /tmp
-chmod 755 -R /var/www/html /var/log/nextdom/
+chmod 755 -R /var/www/html /var/log/nextdom/ /var/lib/nextdom /var/lib/nextdom/config
 
 
 echo 'Start apache2'
