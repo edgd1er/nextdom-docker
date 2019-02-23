@@ -5,7 +5,7 @@ echo $(set)
 
 install_composer(){
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    php -r "if (hash_file('sha384', 'composer-setup.php') === '93b54496392c062774670ac18b134c3b3a95e5a5e5c8f1a9f115f203b75bf9a129d5daa8ba6a13e2cc8a1da0806388a8') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    php -r "if (hash_file('sha384', 'composer-setup.php') === '48e3236262b34d30969dca3c37281b3b4bbe3221bda826ac6a9a62d6444cdb0dcd0615698a5cbe587c3f0fe57a54d8f5') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
     php composer-setup.php --filename=composer --install-dir=/usr/bin/
     php -r "unlink('composer-setup.php');"
 }
@@ -55,11 +55,11 @@ chmod 755 -R /var/www/html
 chown -R www-data:www-data /var/www/html
 
 echo 'Start apache2'
-systemctl restart apache2
-service apache2 restart
+#systemctl restart apache2
+#service apache2 restart
 
 echo 'Start sshd'
-systemctl restart sshd
-service ssh restart
+#systemctl restart sshd
+#service ssh restart
 
 [[ $(ps -C cron | wc -l) -lt 2 ]] && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
