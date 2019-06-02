@@ -2,12 +2,15 @@ version: '3.1'
 services:
   nextdom-web:
     env_file:
-    - envWeb
+      - envWeb
     build:
       dockerfile: apache/Dockerfile
       context: .
       args:
-      - initSh=${initSh}
+        - initSh=init.sh
+        - URLGIT=https://github.com/NextDom/nextdom-core
+        - PHPVER=7.0
+        - VERSION=${VERSION}
     image: edgd1er/nextdom-web:latest
     restart: unless-stopped
     healthcheck:
@@ -17,41 +20,41 @@ services:
     labels:
       - com.centurylinklabs.watchtower.enable=false
     expose:
-    - "80"
-    - "443"
+      - "80"
+      - "443"
     ports:
-    - "${HTTPMAP}"
-    - "${HTTPSMAP}"
+      - "9280:80"
+      - "9643:443"
     volumes:
-    - wwwdata-prod:/var/www/html/
-    - ./:/root/export/
-    tmpfs:
-    - /var/log/
-    - /var/www/html/log/
-    - /tmp/nextdom/
+      #- wwwdata-prod:/var/www/html/
+      - ./:/root/export/
+    #tmpfs:
+    #- /var/log/
+    #- /var/www/html/log/
+    #- /tmp/nextdom/
     depends_on:
-    - nextdom-mysql
+      - nextdom-mysql
 
   nextdom-mysql:
     env_file:
-    - envMysql
-    image: ${IMAGESQL}
+      - envMysql
+    image: mysql/mysql-server:5.7
     restart: unless-stopped
     expose:
-    - "3306"
+      - "3306"
     ports:
-    - "${MYSQLMAP}"
+      - "3326:3306"
     volumes:
-    - mysqldata-prod:/var/lib/mysql
+      - mysqldata-prod:/var/lib/mysql
 
   nextdom-adminer:
     image: adminer
     restart: unless-stopped
     ports:
-    - "${ADMMAP}"
+      - "9281:8080"
 
 volumes:
   mysqldata-prod:
-#    external: true
+  #    external: true
   wwwdata-prod:
 #    external: true

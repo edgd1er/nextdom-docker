@@ -3,7 +3,7 @@
 ### Pre-requis
 
 - docker installé
-- .env, envMysql, envProd, githubtoken.txt: renseigner les informations ports, mdp bdd, user, token github
+- .env, envMysql, envProd: renseigner les informations ports, mdp bdd, user
 
 ### Construction de l'image et lancement des services 
 
@@ -14,9 +14,6 @@ la configuration requise à la construction des conteneurs est dans .env, dans e
 la configuration envMysql pour le conteneur mysql.
 
 la bdd et l'utilisateur sont crées lors de la création du conteneur mysql. Si vous voulez changer les mots de passe, ce qui est conseillé, les infos sensibles sont dans le envMysql et .env.
-
-/!\ particularité du au dépot privé, il faut creer le fichier githubtoken.txt
-qui contient un token ou le login:mdp ayant accès au dépot nextdom-core.
 
 Pour mysql, dans le fichier envMysql, il faut changer les mots de passe root et user
  * MYSQL_ROOT_PASSWORD=changeItTwo
@@ -30,19 +27,21 @@ La variable ROOT_PASSWORD n'est utile que dans le cas d'utilisation du serveur S
 
 Le script docker_prod.sh est adapté pour la production
 
-Le code html/css/js est dans le volume wwwdata-prod, les données mysq sont dans le volume mysqldata-prod
+Le données mysq sont dans le volume mysqldata-prod
 
 ### Parametres du docker_build.sh
 
 options du script:
 
 *	sans option, aucun acces aux périphériques.
-*	TODO p	le conteneur a accès à touts les périphériques (privileged: non recommandé)
-*	TODO u	le conteneur a accès au périphérique ttyUSB0
-*	TODO m	le conteneur est en mode démo ou dev (disponible uniquement avec les paquets debian)
+s option, aucun acces aux périphériques.
+
+*	p	le conteneur a accès à touts les périphériques (privileged: non recommandé)
+*	u	le conteneur a accès au périphérique ttyUSB0
+*	r	le conteneur sera dans la version de la dernière release. sinon sur la branch paramétrée.
 *   z   le conteneur sera complété par le projet local au lieu d'un git clone.
-*   k   les volumes ( web et mysql) sont conservés ainsi que leurs contenus.
-*	h	This help
+*   k   le volume ( mysql) est conservé ainsi que son contenu.
+*	h	Cette aide
 
 ### outils containers
 
