@@ -1,8 +1,0 @@
-TZ=Europe/Paris
-MYSQL_ROOT_HOST=%
-MYSQL_ROOT_PASSWORD=changeItToo
-MYSQL_HOST=nextdom-mysql
-MYSQL_DATABASE=nextdomdb_dev
-MYSQL_USER=nextdom_user_dev
-MYSQL_PASSWORD=changeIt
-MYSQL_PORT=3306
