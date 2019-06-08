@@ -5,17 +5,17 @@ FROM balenalib/amd64-debian:stretch-build as builder
 
 MAINTAINER info@nextdom.com
 
-ARG URLGIT
-ARG PHPVER
-ARG VERSION
-ARG BRANCH
 ARG initSh
+
+ARG BRANCH
 ENV BRANCH=${BRANCH}
+ARG VERSION
 ENV VERSION=${VERSION}
+ARG PHPVER
 ENV PHPVER=${PHPVER}
-ENV URLGIT=${URLGIT}
+ENV URLGIT=https://github.com/NextDom/nextdom-core
 
-
+RUN echo "git url: ${URLGIT} branch: ${BRANCH} version: ${VERSION}"
 RUN apt-get update
 RUN apt-cache search ^php | grep ^php
 RUN apt-get install -y apt-transport-https apt-utils lsb-release wget git apache2 php$PHPVER php$PHPVER-curl php$PHPVER-mbstring php-xml php-zip unzip python-jsmin
@@ -23,7 +23,7 @@ RUN wget -q https://deb.nodesource.com/setup_10.x -O /tmp/nodeTmp && /bin/bash .
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; php composer-setup.php --install-dir=. --filename=composer --quiet; mv composer /usr/local/bin/; chmod +x /usr/local/bin/composer
 RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     cd /usr/share/nextdom && git clone --depth 1 -b $BRANCH $URLGIT . ; \
-    if [ $VERSION != ""  ]; then git tags/$VERSION; fi
+    if [ "x$VERSION" != "x"  ]; then git checkout tags/$VERSION; fi
 RUN cd /usr/share/nextdom/install && \
   sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
   sed -i 's/step_nextdom_mysql_configuration$//g' postinst && \
@@ -45,14 +45,11 @@ set -x' ../scripts/gen_assets.sh
 RUN cd /usr/share/nextdom/ &&  \
   /bin/bash -x install/postinst
 
-
-
-FROM balenalib/amd64-debian:stretch-build as prod
+FROM balenalib/amd64-debian:stretch-run as prod
 #
 ENV ROOT_PASSWORD TBD
 ENV APACHE_PORT 80
 ENV SSH_PORT 22
-ENV VERSION TBD
 ENV locale-gen fr_FR.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE DontWarn
@@ -61,7 +58,6 @@ ENV MYSQL_PORT 3306
 ENV MYSQL_NEXTDOM_USER TBD
 ENV MYSQL_NEXTDOM_PASSWD TBD
 ENV MYSQL_NEXTDOM_DB TBD
-ARG initSh
 #
 RUN apt-get update && apt-get install -y wget supervisor mysql-client ntp ca-certificates unzip \
 curl sudo cron tar wget ntpdate htop iotop iftop smbclient python python-pip \

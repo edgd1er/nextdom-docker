@@ -122,7 +122,7 @@ fi
 
 # build
 #CACHE="--no-cache"
-docker-compose -f ${YML} build ${CACHE}
+docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master URLGIT=${URLGIT} initSh=${initSh}
 # prepare volumes
 docker-compose -f ${YML} up --no-start
 

@@ -3,14 +3,15 @@ services:
   nextdom-web:
     env_file:
       - envWeb
+      - .env
     build:
       dockerfile: apache/Dockerfile
       context: .
       args:
-        - initSh=init.sh
-        - URLGIT=https://github.com/NextDom/nextdom-core
-        - PHPVER=7.0
-        - VERSION=${VERSION}
+        - initSh=$initSh
+        - PHPVER=$PHPVER
+        - VERSION=$VERSION
+        - BRANCH=$BRANCH
     image: edgd1er/nextdom-web:latest
     restart: unless-stopped
     healthcheck:

@@ -8,4 +8,3 @@ MYSQL_NEXTDOM_DB=nextdomdb
 MYSQL_NEXTDOM_USER=nextdom_user
 MYSQL_NEXTDOM_PASSWD=changeIt
 BRANCH=develop
-VERSION=0.2.0
