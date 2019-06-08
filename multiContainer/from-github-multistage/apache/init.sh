@@ -80,8 +80,7 @@ else
 fi
 
 echo 'All init complete'
-ls -al /var/log/
-chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/
+chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /usr/share/nextdom/
 chmod 777 /dev/tty*
 chmod 777 -R /tmp
 chmod 755 -R /var/www/html
