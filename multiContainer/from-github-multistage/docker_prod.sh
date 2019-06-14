@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#get script directory
+localDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #Directory for apache certificate
 SSLDIR=apache/ssl/
 #Archive containing the nextdom-core project
@@ -14,6 +16,12 @@ KEEP=N
 URLGIT=https://github.com/NextDom/nextdom-core
 #use latest release
 RELEASE=N
+#Define dockerfile and compose
+YML=docker-compose.yml
+DKRFILE=${localDir}/apache/Dockerfile
+ARMDKRFILE=${DKRFILE}.armhf
+#get cpu architecture
+ARCHI=$(dpkg --print-architecture)
 
 #fonctions
 usage(){
@@ -76,10 +84,26 @@ updateEnvWebRelease(){
      fi
 }
 
+generateArmHfDockerfile(){
+    if [ "xarmhf" = "x${ARCHI}" ]; then
+        sed 's#amd64-debian#armv7hf-debian#' ${DKRFILE} > ${ARMDKRFILE}
+        sed -i 's#amd64-debian#armv7hf-debian#' ${ARMDKRFILE}
+        else
+        sed 's#FROM balenalib/amd64-debian:stretch-build as builder#FROM balenalib/armhf-debian:stretch-build as builder\
+RUN [ "cross-build-start" ]#' ${DKRFILE} > ${ARMDKRFILE}
+        sed -i 's#FROM balenalib/amd64-debian:stretch-run as prod#FROM balenalib/armv7hf-debian:stretch-run as prod\
+RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
+        echo 'RUN [ "cross-build-end" ]' | tee -a ${ARMDKRFILE}
+    fi
+    echo "****** Check ARM docker file ********"
+    grep -E "FROM|RUN \[" ${ARMDKRFILE}
+    echo "*************************************"
+}
+
+
 #main
+source .env
 source envMysql
-#ZIP=Y
-YML=docker-compose.yml
 
 #getOptions
 while getopts ":hkpuzr" opt; do
@@ -111,6 +135,11 @@ done
 
 updateEnvWebRelease ${RELEASE}
 
+#generate ARM dockerfile
+[[ ! -f ${DKRFILE} ]] && echo -e "\nError, Dockerfile is not found\n" && exit -1
+rm ${ARMDKRFILE}
+generateArmHfDockerfile
+
 # extract local project to container volume
 if [ "Y" == ${KEEP} ]; then
     # stop running container
@@ -121,8 +150,8 @@ if [ "Y" == ${KEEP} ]; then
 fi
 
 # build
-#CACHE="--no-cache"
-docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master URLGIT=${URLGIT} initSh=${initSh}
+CACHE="--no-cache"
+docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh}
 # prepare volumes
 docker-compose -f ${YML} up --no-start
 
