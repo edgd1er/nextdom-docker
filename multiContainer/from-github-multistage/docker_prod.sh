@@ -150,6 +150,7 @@ if [ "Y" == ${KEEP} ]; then
 fi
 
 # build
+CACHE=""
 CACHE="--no-cache"
 docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh}
 # prepare volumes
@@ -159,6 +160,9 @@ if [ "Y" == ${ZIP} ]; then
         echo zipping ${NEXTDOMTAR}
         docker run --rm -v $(pwd):/backup ubuntu bash -c "tar -zcf /backup/${NEXTDOMTAR} -C /var/www/html/ -C /etc/nextdom -C /var/lib/nextdom -C /usr/share/nextdom"
 fi
+
+#disable sha2_password authentification
+docker-compose exec nextdom-mysql sed -i "s/# default/default/g" /etc/my.cnf
 
 #Done in init.sh
 #docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/assets/common.config.php

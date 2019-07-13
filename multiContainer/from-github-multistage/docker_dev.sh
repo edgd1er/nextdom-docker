@@ -18,6 +18,7 @@ KEEP=N
 ZIP=N
 #gitproject url
 URLGIT=https://$(cat ../githubtoken.txt)@github.com/Sylvaner/nextdom-core.git
+URLGIT=https://github.com/NextDom/nextdom-core
 
 #fonctions
 usage(){

@@ -77,15 +77,15 @@ else
 	touch /var/www/html/_nextdom_is_installed
 	cd /root/export/;
 	#makeZip nextdom-${VERSION}.tar.gz
+    chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /usr/share/nextdom/
+    chmod 777 /dev/tty*
+    chmod 777 -R /tmp
+    chmod 755 -R /var/www/html
+    chmod 755 -R /var/log/nextdom/
+    chmod 755 -R /var/lib/nextdom
 fi
 
 echo 'All init complete'
-chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /usr/share/nextdom/
-chmod 777 /dev/tty*
-chmod 777 -R /tmp
-chmod 755 -R /var/www/html
-chmod 755 -R /var/log/nextdom/
-chmod 755 -R /var/lib/nextdom
 
 #[[ $(ps -C cron | wc -l) -lt 2 ]] && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 /usr/bin/supervisord -c /etc/supervisor/supervisord.conf

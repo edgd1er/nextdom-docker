@@ -1,4 +1,3 @@
-
 #balenalib/<hw>-<distro>-<lang_stack>:<lang_ver>-<distro_ver>-(build|run)-<yyyymmdd>
 #FROM debian:latest as builder
 FROM balenalib/amd64-debian:stretch-build as builder
@@ -6,6 +5,7 @@ FROM balenalib/amd64-debian:stretch-build as builder
 MAINTAINER info@nextdom.com
 
 ARG initSh
+ARG POSTINST_DEBUG
 ARG BRANCH
 ENV BRANCH=${BRANCH}
 ARG VERSION
@@ -38,7 +38,7 @@ set -x' ../scripts/gen_composer_npm.sh && \
   sed -i '/set -e/a \
 set -x' ../scripts/gen_assets.sh
   RUN /bin/bash -x /usr/share/nextdom/scripts/gen_global.sh
-  RUN cd /usr/share/nextdom/ && /bin/bash -x install/postinst
+  RUN cd /usr/share/nextdom/ && /bin/bash -x install/postinst ${POSTINST_DEBUG}
 CMD [ "/bin/bash", "-c", "--" , "trap : TERM INT; sleep infinity & wait" ]
 
 FROM balenalib/amd64-debian:stretch-run as prod
@@ -52,9 +52,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE DontWarn
 ENV MYSQL_HOSTNAME localhost
 ENV MYSQL_PORT 3306
-ENV MYSQL_NEXTDOM_USER TBD
-ENV MYSQL_NEXTDOM_PASSWD TBD
-ENV MYSQL_NEXTDOM_DB TBD
+
 #
 RUN apt-get update && apt-get install -y wget supervisor mysql-client ntp ca-certificates unzip \
 curl sudo cron tar wget ntpdate htop iotop iftop smbclient python python-pip \
@@ -89,4 +87,3 @@ RUN a2enmod ssl rewrite && a2dissite 000-default default-ssl && \
   a2ensite nextdom nextdom-ssl; chmod +x /root/init.sh;
 
 CMD ["/root/init.sh"]
-#CMD [ "/bin/bash", "-c", "--" , "trap : TERM INT; sleep infinity & wait" ]

@@ -12,6 +12,8 @@ services:
         - PHPVER=$PHPVER
         - VERSION=$VERSION
         - BRANCH=$BRANCH
+    environment:
+        - POSTINST_DEBUG=-v
     image: edgd1er/nextdom-web:latest
     restart: unless-stopped
     healthcheck:
@@ -39,14 +41,18 @@ services:
   nextdom-mysql:
     env_file:
       - envMysql
-    image: mysql/mysql-server:5.7
+    #image: mysql/mysql-server:5.7
+    ##image: mysql/mysql-server:8.0
+    build:
+      dockerfile: Dockerfile.mysql
+      context: .
     restart: unless-stopped
     expose:
       - "3306"
     ports:
       - "3326:3306"
-    volumes:
-      - mysqldata-prod:/var/lib/mysql
+    #volumes:
+    #  - mysqldata-prod:/var/lib/mysql
 
   nextdom-adminer:
     image: adminer
