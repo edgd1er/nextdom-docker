@@ -27,7 +27,7 @@ RUN cd /usr/share/nextdom/install && \
   sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
   sed -i 's/step_nextdom_mysql_configuration$//g' postinst && \
   sed -i 's/step_nextdom_mysql_populate$//g' postinst && \
-  sed -i 's/step_nextdom_crontab$//g' postinst && \
+  sed -i 's/service cron reload.*//g' postinst && \
   sed -i 's/step_nextdom_check$//g' postinst && \
   sed -i 's/step_os_specific$//g' postinst && \
   sed -i 's#./scripts/gen_global.sh#/bin/bash -x ./scripts/gen_global.sh#g' postinst && \
@@ -71,6 +71,7 @@ mkdir -p /var/log/supervisor -p /var/log/nextdom/ ;
 #
 ADD apache/motd /etc/motd
 COPY --from=builder /etc/php /etc/php
+COPY --from=builder /etc/cron.d /etc/cron.d
 COPY --from=builder /etc/apache2/ /etc/apache2
 COPY --from=builder /etc/nextdom/ /etc/nextdom
 COPY --from=builder /var/lib/nextdom /var/lib/nextdom
