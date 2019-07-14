@@ -1,0 +1,65 @@
+version: '3.1'
+services:
+  nextdom-web:
+    env_file:
+      - envWeb
+      - .env
+    image: edgd1er/nextdom-web:armhf
+    build:
+      dockerfile: apache/Dockerfile.armhf
+      context: .
+      args:
+      - initSh=$initSh
+      - PHPVER=$PHPVER
+      - VERSION=$VERSION
+      - BRANCH=$BRANCH
+    environment:
+      - POSTINST_DEBUG=-v
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost/public/here.html"]
+      interval: 10s
+      timeout: 10s
+    expose:
+      - "80"
+      - "443"
+    ports:
+      - "9280:80"
+      - "9643:443"
+    volumes:
+      #- wwwdata-prod:/var/www/html/
+      - ./:/root/export/
+    #tmpfs:
+    #- /var/log/
+    #- /var/www/html/log/
+    #- /tmp/nextdom/
+    depends_on:
+      - nextdom-mysql
+
+  nextdom-mysql:
+    env_file:
+      - envMysql
+    image: linuxserver/mariadb:arm32v7-latest
+    ##image: mysql/mysql-server:8.0
+    #build:
+    #  dockerfile: Dockerfile.mysql
+    #  context: .
+    restart: unless-stopped
+    expose:
+      - "3306"
+    ports:
+      - "3326:3306"
+    #volumes:
+    #  - mysqldata-prod:/var/lib/mysql
+
+  nextdom-adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "9281:8080"
+
+volumes:
+  mysqldata-prod:
+  #    external: true
+  wwwdata-prod:
+#    external: true
