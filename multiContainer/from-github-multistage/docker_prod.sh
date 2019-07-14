@@ -12,8 +12,6 @@ VOLMYSQL=$(basename $PWD)_mysqldata-prod
 ZIP=N
 #Keep volume if Y, recreate otherwise
 KEEP=N
-#URL to fetch project
-URLGIT=https://github.com/NextDom/nextdom-core
 #use latest release
 RELEASE=N
 #Define dockerfile and compose
@@ -89,7 +87,7 @@ generateArmHfDockerfile(){
         sed 's#amd64-debian#armv7hf-debian#' ${DKRFILE} > ${ARMDKRFILE}
         sed -i 's#amd64-debian#armv7hf-debian#' ${ARMDKRFILE}
         else
-        sed 's#FROM balenalib/amd64-debian:stretch-build as builder#FROM balenalib/armhf-debian:stretch-build as builder\
+        sed 's#FROM balenalib/amd64-debian:stretch-run as builder#FROM balenalib/armv7hf-debian:stretch-run as builder\
 RUN [ "cross-build-start" ]#' ${DKRFILE} > ${ARMDKRFILE}
         sed -i 's#FROM balenalib/amd64-debian:stretch-run as prod#FROM balenalib/armv7hf-debian:stretch-run as prod\
 RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
@@ -151,8 +149,11 @@ fi
 
 # build
 CACHE=""
-CACHE="--no-cache"
-docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh}
+#CACHE="--no-cache"
+docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} nextdom-web
+#docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
+
+exit
 # prepare volumes
 docker-compose -f ${YML} up --no-start
 
@@ -164,12 +165,7 @@ fi
 #disable sha2_password authentification
 docker-compose exec nextdom-mysql sed -i "s/# default/default/g" /etc/my.cnf
 
-#Done in init.sh
-#docker-compose -f ${YML} run --rm -v ${VOLHTML} nextdom-web grep -A4 host /var/www/html/core/assets/common.config.php
-slpTime=20
-#echo -e "\n Waiting ${slpTime} sec for nextdom-mysql to be ready"
-#sleep ${slpTime}
-#docker-compose -f ${YML} run --rm -v ${VOLMYSQL} nextdom-mysql /usr/bin/mysql -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} -e 'select user,host from mysql.user;'
-
 docker-compose -f ${YML} up --remove-orphans
-
+#Place tags
+docker tag edgd1er/nextdom-web:latest edgd1er/nextdom-web:latest-amd64
+#docker tag edgd1er/nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
