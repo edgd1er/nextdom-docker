@@ -4,17 +4,17 @@ services:
     env_file:
       - envWeb
       - .env
+    image: edgd1er/nextdom-web:latest-amd64
     build:
       dockerfile: apache/Dockerfile
       context: .
       args:
-        - initSh=$initSh
-        - PHPVER=$PHPVER
-        - VERSION=$VERSION
-        - BRANCH=$BRANCH
+      - initSh=$initSh
+      - PHPVER=$PHPVER
+      - VERSION=$VERSION
+      - BRANCH=$BRANCH
     environment:
-        - POSTINST_DEBUG=-v
-    image: edgd1er/nextdom-web:latest
+      - POSTINST_DEBUG=-v
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
