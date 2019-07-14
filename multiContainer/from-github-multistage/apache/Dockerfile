@@ -12,7 +12,7 @@ ARG VERSION
 ENV VERSION=${VERSION}
 ARG PHPVER
 ENV PHPVER=${PHPVER}
-ENV URLGIT=https://github.com/NextDom/nextdom-core
+ARG URLGIT
 
 RUN echo "git url: ${URLGIT} branch: ${BRANCH} version: ${VERSION}"
 RUN apt-get update
@@ -23,6 +23,7 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; p
 RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     cd /usr/share/nextdom && git clone --depth 1 -b $BRANCH $URLGIT . ; \
     if [ "x$VERSION" != "x"  ]; then git checkout tags/$VERSION; fi
+#COPY specific/gen_composer_npm.sh /usr/share/nextdom/install/
 RUN cd /usr/share/nextdom/install && \
   sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
   sed -i 's/step_nextdom_mysql_configuration$//g' postinst && \
