@@ -29,7 +29,19 @@ Le script docker_prod.sh est adapté pour la production
 
 Le données mysq sont dans le volume mysqldata-prod
 
-### Parametres du docker_build.sh
+/!\ le cross build pour le raspberry-pi provoque une erreur:
+
+```
++ npm install -g sass
+Error: could not get uid/gid
+[ 'nobody', 0 ]
+
+    at /usr/lib/node_modules/npm/node_modules/uid-number/uid-number.js:37:16
+    at ChildProcess.exithandler (child_process.js:301:5)
+    at ChildProcess.emit (events.js:198:13)
+```
+
+### Parametres du docker_prod.sh
 
 options du script:
 
