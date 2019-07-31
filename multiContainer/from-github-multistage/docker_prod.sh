@@ -79,6 +79,9 @@ updateEnvWebRelease(){
         #echo gitTar: $gitTarBall
         echo "VERSION=${gitTag}" | tee -a envWeb
         echo "VERSION=${gitTag}" | tee -a .env
+        else 
+        sed -i "/VERSION=/d" .env
+        sed -i "/VERSION=/d" enWeb
      fi
 }
 
@@ -150,7 +153,9 @@ fi
 # build
 CACHE=""
 #CACHE="--no-cache"
-docker-compose -f ${YML} build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} nextdom-web
+bVer=""
+[[ ! -z  ${gitTag} ]] && bVer=" --build-arg VERSION=${gitTag}"
+docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} nextdom-web
 #docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
 
 exit
@@ -167,5 +172,5 @@ docker-compose exec nextdom-mysql sed -i "s/# default/default/g" /etc/my.cnf
 
 docker-compose -f ${YML} up --remove-orphans
 #Place tags
-docker tag edgd1er/nextdom-web:latest edgd1er/nextdom-web:latest-amd64
+#docker tag edgd1er/nextdom-web:latest edgd1er/nextdom-web:latest-amd64
 #docker tag edgd1er/nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
