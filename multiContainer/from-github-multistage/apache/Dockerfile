@@ -14,15 +14,15 @@ ARG PHPVER
 ENV PHPVER=${PHPVER}
 ARG URLGIT
 
-RUN echo "git url: ${URLGIT} branch: ${BRANCH} version: ${VERSION}"
 RUN apt-get update
 RUN apt-cache search ^php | grep ^php
 RUN apt-get install -y apt-transport-https apt-utils lsb-release wget git apache2 php${PHPVER} php${PHPVER}-curl php${PHPVER}-mbstring php-xml php-zip unzip python-jsmin
 RUN wget -q https://deb.nodesource.com/setup_10.x -O /tmp/nodeTmp && /bin/bash ./tmp/nodeTmp
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; php composer-setup.php --install-dir=. --filename=composer --quiet; mv composer /usr/local/bin/; chmod +x /usr/local/bin/composer
+RUN echo "git url: ${URLGIT} branch: ${BRANCH} version: ${VERSION}"
 RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     cd /usr/share/nextdom && git clone --depth 1 -b $BRANCH $URLGIT . ; \
-    if [ "x$VERSION" != "x"  ]; then git checkout tags/$VERSION; fi
+    if [ "x$VERSION" != "x"  ]; then git fetch --tags; git checkout $VERSION; fi
 #COPY specific/gen_composer_npm.sh /usr/share/nextdom/install/
 RUN cd /usr/share/nextdom/install && \
   sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
@@ -31,6 +31,7 @@ RUN cd /usr/share/nextdom/install && \
   sed -i 's/service cron reload.*//g' postinst && \
   sed -i 's/step_nextdom_check$//g' postinst && \
   sed -i 's/step_os_specific$//g' postinst && \
+  sed -i "s#bash \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#bash -x \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#g" postinst && \
   sed -i 's#./scripts/gen_global.sh#/bin/bash -x ./scripts/gen_global.sh#g' postinst && \
   sed -i 's#${root}/gen_composer_npm.sh#/bin/bash -x ${root}/gen_composer_npm.sh#g' ../scripts/gen_global.sh && \
   sed -i 's#${root}/gen_assets.sh#/bin/bash -x ${root}/gen_assets.sh#g' ../scripts/gen_global.sh && \
