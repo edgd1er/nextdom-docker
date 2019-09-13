@@ -1,6 +1,6 @@
 version: '3.1'
 services:
-  nextdom-web:
+  web:
     env_file:
       - envWeb
       - .env
@@ -31,14 +31,15 @@ services:
     volumes:
       #- wwwdata-prod:/var/www/html/
       - ./:/root/export/
+      - tmptmpfs:/tmp/
     #tmpfs:
     #- /var/log/
     #- /var/www/html/log/
     #- /tmp/nextdom/
     depends_on:
-      - nextdom-mysql
+      - mysql
 
-  nextdom-mysql:
+  mysql:
     env_file:
       - envMysql
     #image: mysql/mysql-server:5.7
@@ -65,3 +66,7 @@ volumes:
   #    external: true
   wwwdata-prod:
 #    external: true
+  tmptmpfs:
+      driver_opts:
+        device: tmpfs
+        type: tmpfs
