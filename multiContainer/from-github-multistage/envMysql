@@ -4,7 +4,7 @@ TZ=Europe/Paris
 MYSQL_ROOT_HOST=%
 MYSQL_ROOT_PASSWORD=changeItToo
 #container will create user & database
-MYSQL_HOST=nextdom-mysql
+MYSQL_HOST=mysql
 MYSQL_DATABASE=nextdomdb
 MYSQL_USER=nextdom_user
 MYSQL_PASSWORD=changeIt

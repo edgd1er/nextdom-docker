@@ -2,9 +2,10 @@
 TZ=Europe/Paris
 ROOT_PASSWORD=changeitToo
 # name of the service for netxdom to access its db
-MYSQL_HOSTNAME=nextdom-mysql
+MYSQL_HOSTNAME=mysql
 MYSQL_PORT=3306
 MYSQL_NEXTDOM_DB=nextdomdb
 MYSQL_NEXTDOM_USER=nextdom_user
 MYSQL_NEXTDOM_PASSWD=changeIt
 BRANCH=develop
+VERSION=0.4.1

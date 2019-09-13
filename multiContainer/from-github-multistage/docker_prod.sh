@@ -152,10 +152,10 @@ fi
 
 # build
 CACHE=""
-#CACHE="--no-cache"
+CACHE="--no-cache"
 bVer=""
 [[ ! -z  ${gitTag} ]] && bVer=" --build-arg VERSION=${gitTag}"
-docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} nextdom-web
+docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} web
 #docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
 
 exit
@@ -168,7 +168,7 @@ if [ "Y" == ${ZIP} ]; then
 fi
 
 #disable sha2_password authentification
-docker-compose exec nextdom-mysql sed -i "s/# default/default/g" /etc/my.cnf
+docker-compose exec mysql sed -i "s/# default/default/g" /etc/my.cnf
 
 docker-compose -f ${YML} up --remove-orphans
 #Place tags
