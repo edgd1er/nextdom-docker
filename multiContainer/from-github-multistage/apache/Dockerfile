@@ -68,8 +68,7 @@ RUN echo root:$ROOT_PASSWORD | chpasswd ; \
 apt-get clean autoclean ; apt-get autoremove --yes ; \
 rm /etc/motd ; rm -fr /var/lib/{apt,dpkg,cache,log}  /var/www/html/index.html; \
 mkdir -p /var/log/supervisor -p /var/log/nextdom/ \
- && systemctl disable apache2; systemctl stop apache2;service stop apache2;update-rc.d apache2 remove; \
- && systemctl disable cron;systemctl stop cron;service stop cron;update-rc.d cron remove;exit 0
+ ; update-rc.d apache2 remove; update-rc.d cron remove;exit 0
 #
 #
 COPY --from=builder /etc/php /etc/php
