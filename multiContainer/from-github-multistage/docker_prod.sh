@@ -81,7 +81,7 @@ updateEnvWebRelease(){
         echo "VERSION=${gitTag}" | tee -a .env
         else 
         sed -i "/VERSION=/d" .env
-        sed -i "/VERSION=/d" enWeb
+        sed -i "/VERSION=/d" envWeb
      fi
 }
 
@@ -152,7 +152,7 @@ fi
 
 # build
 CACHE=""
-CACHE="--no-cache"
+#CACHE="--no-cache"
 bVer=""
 [[ ! -z  ${gitTag} ]] && bVer=" --build-arg VERSION=${gitTag}"
 docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} web
