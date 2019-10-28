@@ -90,10 +90,22 @@ generateArmHfDockerfile(){
         sed 's#amd64-debian#armv7hf-debian#' ${DKRFILE} > ${ARMDKRFILE}
         sed -i 's#amd64-debian#armv7hf-debian#' ${ARMDKRFILE}
         else
-        sed 's#FROM balenalib/amd64-debian:stretch-run as builder#FROM balenalib/armv7hf-debian:stretch-run as builder\
+          #replace strecth amd for stretch  rmhf
+        sed 's#FROM balenalib/amd64-debian:stretch-run as builder#FROM balenalib/armv7hf-debian:stretch-build as builder\
 RUN [ "cross-build-start" ]#' ${DKRFILE} > ${ARMDKRFILE}
-        sed -i 's#FROM balenalib/amd64-debian:stretch-run as prod#FROM balenalib/armv7hf-debian:stretch-run as prod\
+        sed -i 's#FROM balenalib/amd64-debian:stretch-run as prod#RUN [ "cross-build-end" ]\
+FROM balenalib/armv7hf-debian:stretch-run as prod\
 RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
+          #replace strecth amd for stretch  rmhf
+             #FROM balenalib/amd64-debian:buster-build as builder
+        sed 's#FROM balenalib/amd64-debian:buster-build as builder#FROM balenalib/armv7hf-debian:buster-build as builder\
+RUN [ "cross-build-start" ]#' ${DKRFILE} > ${ARMDKRFILE}
+        sed -i 's#FROM balenalib/amd64-debian:buster-run as prod#RUN [ "cross-build-end" ]\
+FROM balenalib/armv7hf-debian:buster-run as prod\
+RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
+#' ${ARMDKRFILE}
+        sed -i 's#FROM balenalib/amd64-debian:buster-run as prod#FROM balenalib/armv7hf-debian:buster-run as prod#' ${ARMDKRFILE}
+
         echo 'RUN [ "cross-build-end" ]' | tee -a ${ARMDKRFILE}
     fi
     echo "****** Check ARM docker file ********"
@@ -141,6 +153,10 @@ updateEnvWebRelease ${RELEASE}
 rm ${ARMDKRFILE}
 generateArmHfDockerfile
 
+if [ "${ARCHI}" == "armhf" ]; then
+  YML=docker-compose-armhf.yml
+  fi
+
 # extract local project to container volume
 if [ "Y" == ${KEEP} ]; then
     # stop running container
@@ -155,10 +171,18 @@ CACHE=""
 #CACHE="--no-cache"
 bVer=""
 [[ ! -z  ${gitTag} ]] && bVer=" --build-arg VERSION=${gitTag}"
-docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} web
-#docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
+echo "using tag: $gitTag, URL:${URLGIT}, init: ${initSh}";
 
-exit
+
+#Build image according to architecture
+docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} web
+
+#if on a amd64 architecture try to cross build armhf version
+if [ "${ARCHI}" == "amd64" ]; then
+  YML2=docker-compose-armhf.yml
+  #docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
+fi
+
 # prepare volumes
 docker-compose -f ${YML} up --no-start
 
@@ -170,7 +194,7 @@ fi
 #disable sha2_password authentification
 docker-compose exec mysql sed -i "s/# default/default/g" /etc/my.cnf
 
-docker-compose -f ${YML} up --remove-orphans
+#docker-compose -f ${YML} up --remove-orphans
 #Place tags
-#docker tag edgd1er/nextdom-web:latest edgd1er/nextdom-web:latest-amd64
-#docker tag edgd1er/nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
+#docker tag nextdom-web:latest edgd1er/nextdom-web:latest-amd64
+#docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
