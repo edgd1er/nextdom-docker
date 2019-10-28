@@ -23,12 +23,14 @@ RUN echo "git url: ${URLGIT} branch: ${BRANCH} version: ${VERSION}"
 RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     cd /usr/share/nextdom && git clone --depth 1 -b $BRANCH $URLGIT . ; \
     if [ "x$VERSION" != "x"  ]; then git fetch --tags; git checkout $VERSION; fi
-#COPY specific/gen_composer_npm.sh /usr/share/nextdom/install/
 RUN cd /usr/share/nextdom/install && \
   sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
   sed -i 's/step_nextdom_mysql_configuration$//g' postinst && \
   sed -i 's/step_nextdom_mysql_populate$//g' postinst && \
+  sed -i 's/service apache2 restart//g' postinst && \
   sed -i 's/service cron reload.*//g' postinst && \
+  sed -i 's/service cron start//g' postinst && \
+  sed -i 's/service mysql start//g' postinst && \
   sed -i 's/step_nextdom_check$//g' postinst && \
   sed -i 's/step_os_specific$//g' postinst && \
   sed -i "s#bash \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#bash -x \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#g" postinst && \
@@ -43,7 +45,7 @@ set -x' ../scripts/gen_assets.sh
   RUN cd /usr/share/nextdom/ && /bin/bash -x install/postinst ${POSTINST_DEBUG}
 CMD [ "/bin/bash", "-c", "--" , "trap : TERM INT; sleep infinity & wait" ]
 
-FROM balenalib/amd64-debian:buster-run as prod
+FROM balenalib/armv7hf-debian:buster-run as prod
 #
 ARG initSh
 ENV ROOT_PASSWORD TBD
