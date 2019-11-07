@@ -45,7 +45,7 @@ set -x' ../scripts/gen_assets.sh
   RUN cd /usr/share/nextdom/ && /bin/bash -x install/postinst ${POSTINST_DEBUG}
 CMD [ "/bin/bash", "-c", "--" , "trap : TERM INT; sleep infinity & wait" ]
 
-FROM balenalib/armv7hf-debian:buster-run as prod
+FROM balenalib/amd64-debian:buster-run as prod
 #
 ARG initSh
 ENV ROOT_PASSWORD TBD
@@ -87,6 +87,7 @@ ADD apache/${initSh} /root/init.sh
 RUN echo "init: ${initSh}" \
     && usermod -a -G dialout,tty www-data ; echo "www-data ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers \
     && a2enmod ssl rewrite && a2dissite 000-default default-ssl && a2ensite nextdom nextdom-ssl \
-    && chmod +x /root/init.sh;
+    && chmod +x /root/init.sh \
+    && cat /usr/share/nextdom/core/config/Nextdom_version;
 
 CMD ["/root/init.sh"]
