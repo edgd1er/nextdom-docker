@@ -2,7 +2,7 @@
 # dockerfile used to build container
 DKRFILE=Dockerfile
 # docker image tag
-TAG=nextdom/deb
+TAG=nextdom-web/deb
 # dockerfile
 YML=docker-compose.yml
 # parameters
@@ -46,13 +46,19 @@ done
 
 
 # remove existing container
-[[ ! -z $(docker-compose ps -q --filter name=nextdom-deb)  ]] &&  echo $(docker-compose rm -sf nextdom-deb)
+[[ ! -z $(docker ps -q --filter name=nextdom-deb)  ]] &&  echo $(docker-compose rm -sf web-deb)
 #docker system prune -f --volumes
 
 #build image
 echo -e "\nbuilding nextdom-deb from nextdom debian package\n"
 CACHE=""
-CACHE="--no-cache"
-docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE}
+#CACHE="--no-cache"
 
-docker-compose -f ${YML} up
+#to use if apt-cacher is installed
+myIp=$(ifconfig wlp2s0 | grep "inet " | awk '{print $2}')
+docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ web-deb
+
+#no proxy used
+#docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE} --build-arg http_proxy='' --build-arg https_proxy='' web-deb
+
+# [[ $? ]] && docker-compose -f ${YML} up

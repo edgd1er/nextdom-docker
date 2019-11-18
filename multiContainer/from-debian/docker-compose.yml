@@ -1,25 +1,35 @@
 version: '3.1'
 services:
-  nextdom-deb:
-    #image: nextdom-deb/latest
+  web-deb:
+    #image: nextdom-web-deb/latest
     build:
       dockerfile: Dockerfile
       context: .
-    image: edgd1er/nextdom-web:deb
+      args:
+        - MODE=0
+        #- http_proxy=http://$myIp:3142
+        #- https_proxy=http://$myIp:3142
+    image: edgd1er/nextdom-web:deb-x86
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
       interval: 10s
       timeout: 10s
     expose:
-    - "22"
-    - "80"
-    - "443"
-    - "3306"
+      - "22"
+      - "80"
+      - "443"
+      - "3306"
     ports:
-    - "${HTTPMAP}"
-    - "${HTTPSMAP}"
+      - "${HTTPMAP}"
+      - "${HTTPSMAP}"
     environment:
-    - TZ=${TZDATA}
+      - TZ=${TZDATA}
+      - MYSQL_ROOT=mysqlRootPassword
+      - MYSQL_HOSTNAME=holdom2
+      - MYSQL_PORT=3317
+      - MYSQL_NEXTDOM_DB=nextdomTest
+      - MYSQL_NEXTDOM_USER=nextdom_user
+      - MYSQL_NEXTDOM_PASSWD=changeIt
 #    stdin_open: true
 #    tty: true
