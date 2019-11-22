@@ -25,11 +25,35 @@ services:
       - "${HTTPSMAP}"
     environment:
       - TZ=${TZDATA}
-      - MYSQL_ROOT=mysqlRootPassword
-      - MYSQL_HOSTNAME=holdom2
-      - MYSQL_PORT=3317
+      - MYSQL_ROOT=changeIt
+      - MYSQL_HOSTNAME=mysql
+      - MYSQL_PORT=3306
       - MYSQL_NEXTDOM_DB=nextdomTest
       - MYSQL_NEXTDOM_USER=nextdom_user
       - MYSQL_NEXTDOM_PASSWD=changeIt
-#    stdin_open: true
-#    tty: true
+    #    stdin_open: true
+    #    tty: true
+    depends_on:
+      - mysql
+
+  mysql:
+    #image: mysql/mysql-server:5.7
+    image: mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=changeIt
+      - MYSQL_DATABASE=nextdomTest
+      - MYSQL_USER=nextdom_user
+      - MYSQL_PASSWORD=changeIt
+    restart: unless-stopped
+    expose:
+      - "3306"
+    ports:
+      - "3326:3306"
+    #volumes:
+    #  - mysqldata-prod:/var/lib/mysql
+
+  nextdom-adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "9281:8080"

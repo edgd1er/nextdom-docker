@@ -32,7 +32,20 @@ if ! [ -f /.dockerinit ]; then
 #  -t <dir>      : set tmp directory, defaults to /tmp/nextdom
 #  -v            : enable verbose output
   #re run postinst with arguments. /!\ mysql root needed for postinst (add remove user/db)
-	/usr/share/nextdom/install/postinst -i${MYSQL_HOSTNAME} -r${MYSQL_ROOT} -z${MYSQL_PORT} -d${MYSQL_NEXTDOM_DB} -u${MYSQL_NEXTDOM_USER} -p${MYSQL_NEXTDOM_PASSWD} -v
+
+  #remove local service start as service is not useful in docker
+  sed -i "/service .*start$/d" /usr/share/nextdom/install/postinst
+  #remove mysql populate as postinst wants root rights and this is unsecure and unneeded
+  sed -i 's/ step_nextdom_mysql_populate$//g' /usr/share/nextdom/install/postinst
+  #
+  #remove mysql service supervisor conf
+  sed -i '/:mysql/,+3d' /etc/supervisor/conf.d/supervisord.conf
+  bash -x /usr/share/nextdom/install/postinst -i${MYSQL_HOSTNAME} -r${MYSQL_ROOT} -z${MYSQL_PORT} -d${MYSQL_NEXTDOM_DB} -u${MYSQL_NEXTDOM_USER} -p${MYSQL_NEXTDOM_PASSWD} -v
+  cd /usr/share/nextdom
+  php /usr/share/nextdom/install/install.php mode=force 2>&1 || ( echo -e "\nNextDom mysql schema creation failed" )
+
+  #missing settings for cache/tmp
+  chown -R www-data:users /tmp/nextdom /usr/share/nextdom/cache/
 fi
 
 #/etc/init.d/mysql start
