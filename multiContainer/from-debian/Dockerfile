@@ -36,7 +36,13 @@ RUN if [ ".${MODE}" = ".demo" ]; then sed -i '/disable_functions =/c\disable_fun
 
 ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD init_deb.sh /root/init.sh
-RUN chmod +x /root/init.sh
+RUN chmod +x /root/init.sh && \
+#remove local service start as service is not useful in docker
+  sed -i "/service .*start$/d" /usr/share/nextdom/install/postinst && \
+  #remove mysql populate as postinst wants root rights and this is unsecure and unneeded
+  #sed -i 's/ step_nextdom_mysql_populate$//g' /usr/share/nextdom/install/postinst && \
+  #remove mysql service supervisor conf
+  sed -i '/:mysql/,+3d' /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 22
 EXPOSE ${APACHE_HTTP_PORT}

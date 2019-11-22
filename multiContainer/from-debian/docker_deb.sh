@@ -61,4 +61,4 @@ docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE} --build-arg htt
 #no proxy used
 #docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE} --build-arg http_proxy='' --build-arg https_proxy='' web-deb
 
-# [[ $? ]] && docker-compose -f ${YML} up
+[[ $? ]] && docker-compose -f ${YML} down -v --remove-orphans && docker-compose -f ${YML} up
