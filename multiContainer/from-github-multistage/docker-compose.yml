@@ -9,10 +9,11 @@ services:
       dockerfile: apache/Dockerfile
       context: .
       args:
-      - initSh=$initSh
-      - PHPVER=$PHPVER
-      - VERSION=$VERSION
-      - BRANCH=$BRANCH
+      - initShdef=$initSh
+      - PHPVERdef=$PHPVER
+      - VERSIONdef=$VERSION
+      - BRANCHdef=$BRANCH
+      - aptcacher=""
     environment:
       - POSTINST_DEBUG=-v
     restart: unless-stopped

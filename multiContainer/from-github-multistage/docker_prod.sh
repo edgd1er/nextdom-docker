@@ -2,14 +2,8 @@
 
 #get script directory
 localDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-#Directory for apache certificate
-SSLDIR=apache/ssl/
-#Archive containing the nextdom-core project
-NEXTDOMTAR=nextdom-dev.tar.gz
 #volume for mysql
 VOLMYSQL=$(basename $PWD)_mysqldata-prod
-#Use zip unstead of git clone
-ZIP=N
 #Keep volume if Y, recreate otherwise
 KEEP=N
 #use latest release
@@ -25,6 +19,8 @@ TARGETARCHI="x86"
 #image to build
 BUILDARM=N
 BUILDX86=Y
+#use git instead of git tarball =N
+TAR=Y
 
 #fonctions
 
@@ -65,7 +61,8 @@ updateEnvWebRelease() {
   #fetch last release at each run
   jsonGit=$(curl -s "https://api.github.com/repos/Nextdom/nextdom-core/releases/latest")
   gitTag=$(echo $jsonGit | grep -oP "\"tag_name\": \"([^\"]*)\"" | cut -f4 -d'"')
-  gitTarBall=$(echo -e $jsonGit | grep -oP "\"zipball_url\": \"([^\"]*)\"" | cut -f4 -d'"')
+  gitZipBall=$(echo -e $jsonGit | grep -oP "\"zipball_url\": \"([^\"]*)\"" | cut -f4 -d'"')
+  gitTarBall=$(echo -e $jsonGit | grep -oP "\"tarball_url\": \"([^\"]*)\"" | cut -f4 -d'"')
 
   #By default remove Tag
   for file in envWeb .env; do
@@ -79,6 +76,12 @@ updateEnvWebRelease() {
       echo github api not available ? github release var is empty
       echo VERSION:$VERSION / gitTag:$gitTag
       exit 1
+    fi
+    if [ "N" != "${TAR}" ]; then
+      if [ ! -f nextdom-core-${gitTag}.tar.gz ];then
+        rm -f nextdom-core-*.tar.gz
+        wget -O nextdom-core-${gitTag}.tar.gz ${gitTarBall}
+      fi
     fi
     echo -e "\nAdding latest release (${gitTag}) to envWeb"
     #echo gitTar: $gitTarBall
@@ -123,7 +126,7 @@ source .env
 source envMysql
 
 #getOptions
-while getopts ":ahkpuzr" opt; do
+while getopts ":ahkprtuz" opt; do
   case $opt in
   k)
     echo -e "\nkeep docker volume (database)"
@@ -152,6 +155,11 @@ while getopts ":ahkpuzr" opt; do
     echo -e "\nUse latest release"
     RELEASE=Y
     ;;
+  t)
+    echo -e "Use latest release tarBall, instead of git clone"
+    TAR=Y
+    RELEASE=Y
+    ;;
   \?)
     echo "${ROUGE}Invalid option -$OPTARG${NORMAL}" >&2
     ;;
@@ -165,24 +173,23 @@ updateEnvWebRelease ${RELEASE}
 
 #if arm then build only arm image
 if [ "${ARCHI}" == "armhf" ]; then
-    echo -e "\nOnly ${ARCHI} will be build"
-    YML=docker-compose-armhf.yml
-    BUILDARM=Y
-    BUILDX86=N
-    TARGETARCHI="arm"
-  else
-    echo -e "\n${ARCHI} will be build"
-    # sinon build x86 image
-    BUILDX86=Y
-    # and armhf if needed
-    [[ "${TARGETARCHI}" == "all" ]] && BUILDARM=Y && echo -e "\n and also armhf."
+  echo -e "\nOnly ${ARCHI} will be build"
+  YML=docker-compose-armhf.yml
+  BUILDARM=Y
+  BUILDX86=N
+  TARGETARCHI="arm"
+else
+  echo -e "\n${ARCHI} will be build"
+  # sinon build x86 image
+  BUILDX86=Y
+  # and armhf if needed
+  [[ "${TARGETARCHI}" == "all" ]] && BUILDARM=Y && echo -e "\n and also armhf."
 fi
 
 #generate ARM dockerfile
 [[ ! -f ${DKRFILE} ]] && echo -e "\nError, Dockerfile is not found\n" && exit 1
 [[ -f ${ARMDKRFILE} ]] && rm ${ARMDKRFILE}
 [[ "${BUILDARM}" == "Y" ]] && generateArmHfDockerfile
-
 
 # extract local project to container volume
 if [ "Y" == ${KEEP} ]; then
@@ -197,9 +204,8 @@ fi
 CACHE=""
 CACHE="--no-cache"
 bVer=""
-[[ ! -z ${gitTag} ]] && bVer=" --build-arg VERSION=${gitTag}"
-echo "using tag: $gitTag, URL:${URLGIT}, init: ${initSh}"
-
+[[ ! -z ${gitTag} ]] && bVer=" --build-arg VERSIONdef=${gitTag}"
+echo "using tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
 
 #if on a amd64 architecture try to cross build armhf version
 if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
@@ -207,27 +213,40 @@ if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
   BUILDARM=Y
 fi
 
+if [ "${TAR}" = 'N' ]; then gitTarBall=''; fi
+myIp=$(ifconfig wlp2s0 | grep "inet " | awk '{print $2}')
+
 #Build image according to architecture
-[[ ${BUILDX86} == "Y" ]] &&
-  docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} web
-[[ ${BUILDARM} == "Y" ]] &&
-  docker build ${CACHE} --build-arg BRANCH=master --build-arg URLGIT=${URLGIT} --build-arg initSh=${initSh} -t nextdom-web:latest-armhf -f ${ARMDKRFILE} .
+[[ ${BUILDX86} == "Y" ]] && (
+  #docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg tarBalldef=${gitTarBall} web
+  # build target base
+  #CACHE="--no-cache"
+  docker build -f ${DKRFILE}.1 ${CACHE} --target base -t base ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
+#  exit
+  #CACHE="--no-cache"
+  #build target build +prod
+  docker build -f ${DKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
+)
+
+
+[[ ${BUILDARM} == "Y" ]] && (
+ # docker build --target base --build-arg ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 -t nextdom-web:latest-armhf -f ${ARMDKRFILE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ .
+  DOCKER_BUILDKIT=1 docker build -f ${ARMDKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-armhf .
+)
 
 # prepare volumes
 docker-compose -f ${YML} up --no-start
 
-#disable sha2_password authentification
-docker-compose -f ${YML} exec mysql sed -i "s/# default/default/g" /etc/my.cnf
-
-if [ "Y" == ${ZIP} ]; then
+if [ "Y" == "${ZIP}" ]; then
   echo zipping ${NEXTDOMTAR}
   docker run --rm -v $(pwd):/backup ubuntu bash -c "tar -zcf /backup/${NEXTDOMTAR} -C /var/www/html/ -C /etc/nextdom -C /var/lib/nextdom -C /usr/share/nextdom"
 fi
 
+docker-compose -f ${YML} up --remove-orphans
+#disable sha2_password authentification
+#docker-compose -f ${YML} exec mysql sed -i "s/# default/default/g" /etc/my.cnf
 
-#docker-compose -f ${YML} up --remove-orphans
 #Place tags
 [[ ${BUILDX86} == "Y" ]] && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
 [[ ${BUILDARM} == "Y" ]] && docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
 
-docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf

@@ -1,3 +1,4 @@
 # Created by .ignore support plugin (hsz.mobi)
 *.yml
-*.gz
+backup*.gz
+*.sh

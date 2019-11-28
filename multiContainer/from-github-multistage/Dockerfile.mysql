@@ -1,0 +1,6 @@
+#FROM mysql/mysql-server:8.0
+FROM mysql/mysql-server:5.7
+
+MAINTAINER info@nextdom.com
+
+#RUN  sed -i "s/# default/default/g" /etc/my.cnf
