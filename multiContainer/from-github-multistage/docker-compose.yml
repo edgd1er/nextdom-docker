@@ -5,15 +5,15 @@ services:
       - envWeb
       - .env
     image: edgd1er/nextdom-web:latest-amd64
-    build:
-      dockerfile: apache/Dockerfile
-      context: .
-      args:
-      - initShdef=$initSh
-      - PHPVERdef=$PHPVER
-      - VERSIONdef=$VERSION
-      - BRANCHdef=$BRANCH
-      - aptcacher=""
+    #build:
+#      dockerfile: apache/Dockerfile
+#      context: .
+#      args:
+#      - initShdef=$initSh
+#      - PHPVERdef=$PHPVER
+#      - VERSIONdef=$VERSION
+#      - BRANCHdef=$BRANCH
+#      - aptcacher=""
     environment:
       - POSTINST_DEBUG=-v
     restart: unless-stopped

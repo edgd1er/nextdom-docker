@@ -21,13 +21,16 @@ BUILDARM=N
 BUILDX86=Y
 #use git instead of git tarball =N
 TAR=Y
-
+#use or not apt-cacher
+CACHER="N"
+APTPROXY=""
 #fonctions
 
 # :ahkpuzr
 usage() {
   echo -e "\n$0: [a,h,k,(u|p),r]\n\twithout option, container is built from github sources for x86 and has no access to devices"
   echo -e "\ta\tBy defaut only own cpu architecture image is build, if set to all, x86 and armhf images will be build"
+  echo -e "\tc\tif set, apt-cacher will be use when building image"
   echo -e "\th\this help"
   echo -e "\tk\tcontainer volumes are not recreated, but reused ( keep previous data intact)"
   echo -e "\tp\tcontainer has access to all devices (privileged: not recommended)"
@@ -88,6 +91,8 @@ updateEnvWebRelease() {
     echo "VERSION=${gitTag}" | tee -a envWeb
     echo "VERSION=${gitTag}" | tee -a .env
   else
+    gitTarBall=""
+    gitTag=""
     sed -i "/VERSION=/d" .env
     sed -i "/VERSION=/d" envWeb
   fi
@@ -121,23 +126,50 @@ RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
   echo "*************************************"
 }
 
-#main
+setProxy(){
+  iface=$(ls -l /sys/class/net/ | grep -v virtual)
+
+  myIp=$(ifconfig wlp2s0 | grep "inet " | awk '{print $2}')
+  APTPROXY="--build-arg aptcacher=${myIp}"
+}
+
+########################
+#       Main
+########################
 source .env
 source envMysql
 
 #getOptions
-while getopts ":ahkprtuz" opt; do
+while getopts ":ab:chkprtuz" opt; do
   case $opt in
+  a)
+    echo "building only for x86 architecture"
+    TARGETARCHI="x86"
+    ;;
+  b)
+    BRANCH=$OPTARG
+    echo "using branch ${BRANCH}"
+    ;;
+  c)
+    echo "use apt-cacher (apt local cache)"
+    CACHER="Y"
+    setProxy
+    ;;
+
+  h)
+    usage
+    ;;
   k)
     echo -e "\nkeep docker volume (database)"
     KEEP=Y
     ;;
-  h)
-    usage
-    ;;
   p)
     echo -e "\ndocker will have access to all devices\n"
     YML="docker-compose.yml -f docker-compose-privileged.yml"
+    ;;
+  r)
+    echo -e "\nUse latest release"
+    RELEASE=Y
     ;;
   u)
     echo -e "\n docker will have access to ttyUSB0\n"
@@ -146,14 +178,6 @@ while getopts ":ahkprtuz" opt; do
   z)
     echo -e "\nMaking a zip in docker"
     ZIP=Y
-    ;;
-  a)
-    echo "building only for x86 architecture"
-    TARGETARCHI="x86"
-    ;;
-  r)
-    echo -e "\nUse latest release"
-    RELEASE=Y
     ;;
   t)
     echo -e "Use latest release tarBall, instead of git clone"
@@ -202,10 +226,12 @@ fi
 
 # build
 CACHE=""
-CACHE="--no-cache"
+#CACHE="--no-cache"
 bVer=""
+bbranch=" --build-arg BRANCHdef=master"
 [[ ! -z ${gitTag} ]] && bVer=" --build-arg VERSIONdef=${gitTag}"
-echo "using tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
+[[ ! -z ${BRANCH} ]] && bbranch=" --build-arg BRANCHdef=${BRANCH}" && gitTarBall="" &&
+echo "using branch: ${BRANCH}, tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
 
 #if on a amd64 architecture try to cross build armhf version
 if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
@@ -214,23 +240,20 @@ if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
 fi
 
 if [ "${TAR}" = 'N' ]; then gitTarBall=''; fi
-myIp=$(ifconfig wlp2s0 | grep "inet " | awk '{print $2}')
 
 #Build image according to architecture
 [[ ${BUILDX86} == "Y" ]] && (
-  #docker-compose -f ${YML} build ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg tarBalldef=${gitTarBall} web
-  # build target base
+  # prepare parent image used for building and running
   #CACHE="--no-cache"
-  docker build -f ${DKRFILE}.1 ${CACHE} --target base -t base ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
-#  exit
-  #CACHE="--no-cache"
+  docker build -f ${DKRFILE}.1 ${CACHE} --build-arg PHPVERdef=7.3 ${APTPROXY} -t nextdom-base:latest-amd64 .
+  CACHE="--no-cache"
   #build target build +prod
-  docker build -f ${DKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
+  docker build -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer}  --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
 )
-
+exit
 
 [[ ${BUILDARM} == "Y" ]] && (
- # docker build --target base --build-arg ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 -t nextdom-web:latest-armhf -f ${ARMDKRFILE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ .
+  #docker build --target base --build-arg ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 -t nextdom-web:latest-armhf -f ${ARMDKRFILE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ .
   DOCKER_BUILDKIT=1 docker build -f ${ARMDKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-armhf .
 )
 
@@ -247,6 +270,6 @@ docker-compose -f ${YML} up --remove-orphans
 #docker-compose -f ${YML} exec mysql sed -i "s/# default/default/g" /etc/my.cnf
 
 #Place tags
-[[ ${BUILDX86} == "Y" ]] && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
-[[ ${BUILDARM} == "Y" ]] && docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
+[[ ${BUILDX86} == "Y" ]] && echo "tagging amd64 image" && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
+[[ ${BUILDARM} == "Y" ]] && echo "tagging armhf image" &&docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
 
