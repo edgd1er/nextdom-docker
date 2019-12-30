@@ -28,15 +28,31 @@ define_nextom_mysql_credentials() {
   [[ ! -e ${sample} ]] && echo "${sample} is missing" && exit
   [[ -e ${confFile} ]] && rm -f ${confFile}
 
+  ##try
+    SECRET_KEY=$(
+      tr </dev/urandom -dc '1234567890azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN_@;=' | head -c30
+      echo ""
+    )
+    # Add a special char
+    SECRET_KEY=$SECRET_KEY$(
+      tr </dev/urandom -dc '*&!@#' | head -c1
+      echo ""
+    )
+    # Add numeric char
+    SECRET_KEY=$SECRET_KEY$(
+      tr </dev/urandom -dc '1234567890' | head -c1
+      echo ""
+
   cp ${sample} ${confFile}
-  sed -i "s/#PASSWORD#/${MYSQL_NEXTDOM_PASSWD}/g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s/#DBNAME#/${MYSQL_NEXTDOM_DB}/g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s/#USERNAME#/${MYSQL_NEXTDOM_USER}/g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s/#PORT#/${MYSQL_PORT}/g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s/#HOST#/${MYSQL_HOSTNAME}/g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s%#LOG_DIR#%${LOG_DIRECTORY}%g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s%#LIB_DIR#%${LIB_DIRECTORY}%g" ${WEBSERVER_HOME}/core/config/common.config.php
-  sed -i "s%#TMP_DIR#%${TMP_DIRECTORY}%g" ${WEBSERVER_HOME}/core/config/common.config.php
+  sed -i "s/#PASSWORD#/${MYSQL_NEXTDOM_PASSWD}/g" ${confFile}
+  sed -i "s/#DBNAME#/${MYSQL_NEXTDOM_DB}/g" ${confFile}
+  sed -i "s/#USERNAME#/${MYSQL_NEXTDOM_USER}/g" ${confFile}
+  sed -i "s/#PORT#/${MYSQL_PORT}/g" ${confFile}
+  sed -i "s/#HOST#/${MYSQL_HOSTNAME}/g" ${confFile}
+  sed -i "s%#LOG_DIR#%${LOG_DIRECTORY}%g" ${confFile}
+  sed -i "s%#LIB_DIR#%${LIB_DIRECTORY}%g" ${confFile}
+  sed -i "s%#TMP_DIR#%${TMP_DIRECTORY}%g" ${confFile}
+  sed -i "s%#SECRET_KEY#%${SECRET_KEY}%g" ${confFile}
   echo "wrote configuration file: ${WEBSERVER_HOME}/core/config/common.config.php"
 }
 

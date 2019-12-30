@@ -35,12 +35,7 @@ ADD postinst.sh /usr/share/nextdom/install/scripts/
 ADD preinst.sh /usr/share/nextdom/install/scripts/
 ADD utils.sh /usr/share/nextdom/install/scripts/
 ADD config.sh /usr/share/nextdom/install/scripts/
-RUN cat install/install_docker.sh \
- && sed -i 's/PRODUCTION=true/PRODUCTION=false/g' install/scripts/config.sh \
- && sed -i 's/PHP_DIRECTORY=/#PHP_DIRECTORY=/g' install/scripts/config.sh \
- #&& composer install -o --no-dev \
- && /bin/bash -x install/install_docker.sh
-
+RUN /bin/bash -x install/install_docker.sh
 
 #FROM balenalib/amd64-debian:buster-run as prod
 FROM nextdom-base:latest-amd64 AS prod
@@ -58,6 +53,8 @@ ARG PHPVERdef
 ENV PHPVER=${PHPVERdef:-php7.4}
 ARG URLGITdef
 ENV URLGIT=${URLGITdef:-noGitUrl}
+ARG PRODUCTIONdef
+ENV PRODUCTION=${PRODUCTIONdef:-"true"}
 
 ENV ROOT_PASSWORD TBD
 ENV APACHE_HTTP_PORT 80
@@ -91,13 +88,12 @@ RUN rm -Rf /var/www/html && ln -s "/usr/share/nextdom" "/var/www/html" \
  && cat /usr/share/nextdom/assets/config/Nextdom_version;\
  cat /usr/share/nextdom/core/config/Nextdom_version
 RUN echo root:$ROOT_PASSWORD | chpasswd ; \
-    apt-get clean autoclean ; apt-get autoremove --yes ; \
-    rm /etc/apt/apt.conf.d/01proxy ;\
-    rm /etc/motd ; rm -rf /var/lib/apt/lists/*  /var/www/html/index.html; \
-    mkdir -p /var/log/supervisor -p /var/log/nextdom/ \
- ; update-rc.d apache2 remove; update-rc.d cron remove;exit 0
+ apt-get clean autoclean ; apt-get autoremove --yes ; \
+ if [ -n ${aptcacher} ]; then rm /etc/apt/apt.conf.d/01proxy ;fi \
+ rm -rf /var/lib/apt/lists/* ; \
+ mkdir -p /var/log/supervisor ; \
+ update-rc.d apache2 remove; update-rc.d cron remove;exit 0
 
-ADD apache/motd /etc/motd
 ADD apache/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD apache/${initSh} /root/init.sh
 RUN echo "init: ${initSh}" \
