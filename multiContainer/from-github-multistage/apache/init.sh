@@ -38,7 +38,32 @@ define_nextom_mysql_credentials() {
   sed -i "s%#LIB_DIR#%${LIB_DIRECTORY}%g" ${WEBSERVER_HOME}/core/config/common.config.php
   sed -i "s%#TMP_DIR#%${TMP_DIRECTORY}%g" ${WEBSERVER_HOME}/core/config/common.config.php
   echo "wrote configuration file: ${WEBSERVER_HOME}/core/config/common.config.php"
+}
 
+createSchemaIfNeeded() {
+  #creare schema if needed
+  /usr/bin/mysql -h ${MYSQL_HOSTNAME} -u${MYSQL_NEXTDOM_USER} -p${MYSQL_NEXTDOM_PASSWD} -D ${MYSQL_NEXTDOM_DB} -P${MYSQL_PORT} -e 'use ${DBNAME};'
+  ret=$?
+  if [ 0 -ne ${ret} ]; then
+    if [ -n "${MYSQL_ROOT_PASSWORD}" ]; then
+      QUERY="DROP USER IF EXISTS '${MYSQL_NEXTDOM_USER}'@'${CONSTRAINT}';"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+      QUERY="CREATE USER '${MYSQL_NEXTDOM_USER}'@'${CONSTRAINT}' IDENTIFIED BY '${MYSQL_NEXTDOM_PASSWD}';"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+      QUERY="DROP DATABASE IF EXISTS ${MYSQL_NEXTDOM_DB};"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+      QUERY="CREATE DATABASE ${MYSQL_NEXTDOM_DB};"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+      QUERY="GRANT ALL PRIVILEGES ON ${MYSQL_NEXTDOM_DB}.* TO '${MYSQL_NEXTDOM_USER}'@'${CONSTRAINT}';"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+      QUERY="FLUSH PRIVILEGES;"
+      mysql -uroot -h${MYSQL_HOSTNAME} -p${MYSQL_ROOT_PASSWORD} -e "${QUERY}"
+    else
+      echo -e "\nError, cannot access to database, no schema found but no mysql root password found, cannot create schema"
+    fi
+    php ${WEBSERVER_HOME}/install/install.php mode=force
+
+  fi
 }
 
 waitForMysql() {
@@ -58,24 +83,17 @@ if ! [ -f /.dockerinit ]; then
   chmod 755 /.dockerinit
 fi
 
-if [ ! -z ${MODE_HOST} ] && [ ${MODE_HOST} -eq 1 ]; then
-  echo 'Update /etc/hosts for host mode'
-  echo "127.0.0.1 localhost nextdom" >/etc/hosts
-fi
-
 if [ -f "/var/www/html/_nextdom_is_installed" ]; then
   echo 'NextDom is already install'
 else
   echo 'Start nextdom customization'
-  cd /var/www/html
+  cd ${WEBSERVER_HOME}
   define_nextom_mysql_credentials
   waitForMysql
-  php /var/www/html/install/install.php
+  createSchemaIfNeeded
   touch /var/www/html/_nextdom_is_installed
-  cd /root/export/
+  #cd /root/export/
   #makeZip nextdom-${VERSION}.tar.gz
-  #not needed as done in image building
-  #chown -R www-data:www-data /var/www/html /var/log/nextdom/ /var/lib/nextdom/ /usr/share/nextdom/
   chmod 777 /dev/tty*
   chmod 777 -R /tmp
   # removed as done in image and very slow for first start

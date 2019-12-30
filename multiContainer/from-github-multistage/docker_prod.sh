@@ -245,17 +245,21 @@ if [ "${TAR}" = 'N' ]; then gitTarBall=''; fi
 [[ ${BUILDX86} == "Y" ]] && (
   # prepare parent image used for building and running
   #CACHE="--no-cache"
-  docker build -f ${DKRFILE}.1 ${CACHE} --build-arg PHPVERdef=7.3 ${APTPROXY} -t nextdom-base:latest-amd64 .
-  CACHE="--no-cache"
+  #docker build -f ${DKRFILE}.1 ${CACHE} --build-arg PHPVERdef=7.3 ${APTPROXY} -t nextdom-base:latest-amd64 .
+  #docker tag nextdom-base:latest-amd64 edgd1er/nextdom-base:latest-amd64
+  #CACHE="--no-cache"
   #build target build +prod
   docker build -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer}  --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
 )
-exit
 
 [[ ${BUILDARM} == "Y" ]] && (
   #docker build --target base --build-arg ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 -t nextdom-web:latest-armhf -f ${ARMDKRFILE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ .
   DOCKER_BUILDKIT=1 docker build -f ${ARMDKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-armhf .
 )
+
+#Place tags
+[[ ${BUILDX86} == "Y" ]] && echo "tagging amd64 image" && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
+[[ ${BUILDARM} == "Y" ]] && echo "tagging armhf image" &&docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
 
 # prepare volumes
 docker-compose -f ${YML} up --no-start
@@ -269,7 +273,4 @@ docker-compose -f ${YML} up --remove-orphans
 #disable sha2_password authentification
 #docker-compose -f ${YML} exec mysql sed -i "s/# default/default/g" /etc/my.cnf
 
-#Place tags
-[[ ${BUILDX86} == "Y" ]] && echo "tagging amd64 image" && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
-[[ ${BUILDARM} == "Y" ]] && echo "tagging armhf image" &&docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
 

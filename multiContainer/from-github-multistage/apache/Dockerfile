@@ -29,29 +29,18 @@ RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     if [ -n ${BRANCH} -a -z "$(ls -A .)" ]; then echo "cloning and checkouting branch: ${BRANCH} / ${URLGIT}"; git clone --depth 1 -b ${BRANCH} ${URLGIT} . ; fi
 RUN cd /usr/share/nextdom; if [  -z "$(ls -A .)" ]; then echo "cloning depot"; git clone --depth 1 -b ${BRANCH:-master} $URLGIT . ;fi;\
   cat /usr/share/nextdom/assets/config/Nextdom_version
-RUN  cd /usr/share/nextdom/install && \
-  sed -i 's/step_nextdom_mysql_parameters$//g' postinst && \
-  sed -i 's/step_nextdom_mysql_configuration$//g' postinst && \
-  sed -i 's/step_nextdom_mysql_populate$//g' postinst && \
-  sed -i 's/service apache2 restart//g' postinst && \
-  sed -i 's/service cron reload.*//g' postinst && \
-  sed -i 's/service cron start//g' postinst && \
-  sed -i 's/service mysql start//g' postinst && \
-  sed -i 's/step_nextdom_check$//g' postinst && \
-  sed -i 's/step_os_specific$//g' postinst && \
-  sed -i "s#bash \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#bash -x \${WEBSERVER_HOME}/scripts/prepare_mobile.sh#g" postinst && \
-  sed -i 's#./scripts/gen_global.sh#/bin/bash -x ./scripts/gen_global.sh#g' postinst && \
-  sed -i 's#${root}/gen_composer_npm.sh#/bin/bash -x ${root}/gen_composer_npm.sh#g' ../scripts/gen_global.sh && \
-  sed -i 's#${root}/gen_assets.sh#/bin/bash -x ${root}/gen_assets.sh#g' ../scripts/gen_global.sh && \
-  sed -i '/set -e/a \
-set -x' ../scripts/gen_composer_npm.sh && \
-  sed -i '/set -e/a \
-set -x' ../scripts/gen_assets.sh && \
-  cat /usr/share/nextdom/assets/config/Nextdom_version;
-#RUN sed -i 's/wget -q https/wget --no-proxy https/g' /usr/share/nextdom/scripts/gen_composer_npm.sh && \
-RUN    /bin/bash -x /usr/share/nextdom/scripts/gen_global.sh
-RUN cd /usr/share/nextdom/ && /bin/bash -x install/postinst ${POSTINST_DEBUG}
-#CMD [ "/bin/bash", "-c", "--" , "trap : TERM INT; sleep infinity & wait" ]
+#temp correction
+ADD install_docker.sh /usr/share/nextdom/install/
+ADD postinst.sh /usr/share/nextdom/install/scripts/
+ADD preinst.sh /usr/share/nextdom/install/scripts/
+ADD utils.sh /usr/share/nextdom/install/scripts/
+ADD config.sh /usr/share/nextdom/install/scripts/
+RUN cat install/install_docker.sh \
+ && sed -i 's/PRODUCTION=true/PRODUCTION=false/g' install/scripts/config.sh \
+ && sed -i 's/PHP_DIRECTORY=/#PHP_DIRECTORY=/g' install/scripts/config.sh \
+ #&& composer install -o --no-dev \
+ && /bin/bash -x install/install_docker.sh
+
 
 #FROM balenalib/amd64-debian:buster-run as prod
 FROM nextdom-base:latest-amd64 AS prod
@@ -95,12 +84,11 @@ COPY --from=builder /etc/apache2/ /etc/apache2
 COPY --from=builder /etc/nextdom/ /etc/nextdom
 COPY --chown=www-data:www-data --from=builder /var/lib/nextdom /var/lib/nextdom
 COPY --chown=www-data:www-data --from=builder /usr/share/nextdom /usr/share/nextdom
-COPY --chown=www-data:www-data --from=builder /var/www/html /var/www/html
-COPY --chown=www-data:www-data --from=builder /var/www/html /var/www/html
 # just to get postinst for later analysis
-COPY --chown=www-data:www-data --from=builder /var/log/nextdom/postinst.log /var/log/nextdom/postinst.log
+COPY --chown=www-data:www-data --from=builder /var/log/nextdom/install.log /var/log/nextdom/install.log
 
-RUN cat /usr/share/nextdom/assets/config/Nextdom_version;\
+RUN rm -Rf /var/www/html && ln -s "/usr/share/nextdom" "/var/www/html" \
+ && cat /usr/share/nextdom/assets/config/Nextdom_version;\
  cat /usr/share/nextdom/core/config/Nextdom_version
 RUN echo root:$ROOT_PASSWORD | chpasswd ; \
     apt-get clean autoclean ; apt-get autoremove --yes ; \
@@ -114,9 +102,9 @@ ADD apache/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD apache/${initSh} /root/init.sh
 RUN echo "init: ${initSh}" \
     && usermod -a -G dialout,tty www-data ; echo "www-data ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers \
-    && a2enmod ssl rewrite && a2dissite 000-default default-ssl && a2ensite nextdom nextdom-ssl \
-    && chmod +x /root/init.sh \
-    && cat /usr/share/nextdom/core/config/Nextdom_version
+#    && a2enmod ssl rewrite && a2dissite 000-default default-ssl && a2ensite nextdom nextdom-ssl \
+    && chmod +x /root/init.sh #\
+    #&& cat /usr/share/nextdom/core/config/Nextdom_version
 WORKDIR /usr/share/nextdom/
 #RUN git init . && git remote add origin https://github.com/NextDom/nextdom-core/
 ENTRYPOINT ["/root/init.sh"]
