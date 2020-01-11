@@ -35,6 +35,7 @@ ADD postinst.sh /usr/share/nextdom/install/scripts/
 ADD preinst.sh /usr/share/nextdom/install/scripts/
 ADD utils.sh /usr/share/nextdom/install/scripts/
 ADD config.sh /usr/share/nextdom/install/scripts/
+ADD apache/supervisord.conf /usr/share/nextdom/install/
 RUN /bin/bash -x install/install_docker.sh
 
 #FROM balenalib/amd64-debian:buster-run as prod
