@@ -469,7 +469,7 @@ step10_specific_action_for_OS() {
 
   { ##try
     # Windows hack (bash for windows)
-    if [[ ! $(uname -r | grep -i microsoft) = "" ]] ; then
+    if [[ ! $(uname -r | grep -i microsoft) == "" ]]; then
       bash ${WEBSERVER_HOME}/install/OS_specific/windows/pre_inst.sh
     fi
   } || { ##catch
@@ -516,13 +516,13 @@ step12_change_owner_for_nextdom_directories() {
   { ##try
     local directories=("${ROOT_DIRECTORY}" "${LIB_DIRECTORY}" "${LOG_DIRECTORY}" "${TMP_DIRECTORY}")
     for c_dir in ${directories[*]}; do
-        { ##try
-            if [[ -d "${c_dir}" ]]; then
-              chown -Rf www-data:www-data "${c_dir}"
-            fi
-        } || { ##catch
-            addLogError "Error while changing owner on ${c_dir}"
-        }
+      { ##try
+        if [[ -d "${c_dir}" ]]; then
+          chown -Rf www-data:www-data "${c_dir}"
+        fi
+      } || { ##catch
+        addLogError "Error while changing owner on ${c_dir}"
+      }
     done
   } || { ##catch
     addLogError "Error while changing owner"
