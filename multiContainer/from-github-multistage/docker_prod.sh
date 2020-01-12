@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 #get script directory
 localDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 #volume for mysql
@@ -81,7 +83,7 @@ updateEnvWebRelease() {
       exit 1
     fi
     if [ "N" != "${TAR}" ]; then
-      if [ ! -f nextdom-core-${gitTag}.tar.gz ];then
+      if [ ! -f nextdom-core-${gitTag}.tar.gz ]; then
         rm -f nextdom-core-*.tar.gz
         wget -O nextdom-core-${gitTag}.tar.gz ${gitTarBall}
       fi
@@ -126,7 +128,7 @@ RUN [ "cross-build-start" ]#' ${ARMDKRFILE}
   echo "*************************************"
 }
 
-setProxy(){
+setProxy() {
   iface=$(ls -l /sys/class/net/ | grep -v virtual)
 
   myIp=$(ifconfig wlp2s0 | grep "inet " | awk '{print $2}')
@@ -231,7 +233,7 @@ bVer=""
 bbranch=" --build-arg BRANCHdef=master"
 [[ ! -z ${gitTag} ]] && bVer=" --build-arg VERSIONdef=${gitTag}"
 [[ ! -z ${BRANCH} ]] && bbranch=" --build-arg BRANCHdef=${BRANCH}" && gitTarBall="" &&
-echo "using branch: ${BRANCH}, tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
+  echo "using branch: ${BRANCH}, tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
 
 #if on a amd64 architecture try to cross build armhf version
 if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
@@ -245,21 +247,24 @@ if [ "${TAR}" = 'N' ]; then gitTarBall=''; fi
 [[ ${BUILDX86} == "Y" ]] && (
   # prepare parent image used for building and running
   #CACHE="--no-cache"
-  #docker build -f ${DKRFILE}.1 ${CACHE} --build-arg PHPVERdef=7.3 ${APTPROXY} -t nextdom-base:latest-amd64 .
+  docker build -f ${DKRFILE}.1 ${CACHE} --build-arg PHPVERdef=7.3 ${APTPROXY} -t nextdom-base:latest-amd64 .
+  [[ $? -ne 0 ]] && (echo "Error, aborted building nextdom base" && exit)
   #docker tag nextdom-base:latest-amd64 edgd1er/nextdom-base:latest-amd64
   #CACHE="--no-cache"
   #build target build +prod
-  docker build -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer}  --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
+  docker build -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer} --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-amd64 .
+  #[[ $? -ne 0 ]] && ( echo "Error, aborted building nextdom-web:latest-amd64" && exit )
 )
 
 [[ ${BUILDARM} == "Y" ]] && (
   #docker build --target base --build-arg ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 -t nextdom-web:latest-armhf -f ${ARMDKRFILE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ .
   DOCKER_BUILDKIT=1 docker build -f ${ARMDKRFILE} ${CACHE} ${bVer} --build-arg BRANCHdef=master --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 --build-arg aptcacher="${myIp}" --build-arg POSTINST_DEBUG=1 -t nextdom-web:latest-armhf .
+  #[[ $? -ne 0 ]] && ( echo "Error, aborted building nextdom-web:latest-armhf" && exit )
 )
 
 #Place tags
 [[ ${BUILDX86} == "Y" ]] && echo "tagging amd64 image" && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
-[[ ${BUILDARM} == "Y" ]] && echo "tagging armhf image" &&docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
+[[ ${BUILDARM} == "Y" ]] && echo "tagging armhf image" && docker tag nextdom-web:latest-armhf edgd1er/nextdom-web:latest-armhf
 
 # prepare volumes
 docker-compose -f ${YML} up --no-start
@@ -272,5 +277,3 @@ fi
 docker-compose -f ${YML} up --remove-orphans
 #disable sha2_password authentification
 #docker-compose -f ${YML} exec mysql sed -i "s/# default/default/g" /etc/my.cnf
-
-
