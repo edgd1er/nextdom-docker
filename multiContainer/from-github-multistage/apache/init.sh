@@ -29,19 +29,20 @@ define_nextom_mysql_credentials() {
   [[ -e ${confFile} ]] && rm -f ${confFile}
 
   ##try
-    SECRET_KEY=$(
-      tr </dev/urandom -dc '1234567890azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN_@;=' | head -c30
-      echo ""
-    )
-    # Add a special char
-    SECRET_KEY=$SECRET_KEY$(
-      tr </dev/urandom -dc '*&!@#' | head -c1
-      echo ""
-    )
-    # Add numeric char
-    SECRET_KEY=$SECRET_KEY$(
-      tr </dev/urandom -dc '1234567890' | head -c1
-      echo ""
+  SECRET_KEY=$(
+    tr </dev/urandom -dc '1234567890azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN_@;=' | head -c30
+    echo ""
+  )
+  # Add a special char
+  SECRET_KEY=$SECRET_KEY$(
+    tr </dev/urandom -dc '*&!@#' | head -c1
+    echo ""
+  )
+  # Add numeric char
+  SECRET_KEY=$SECRET_KEY$(
+    tr </dev/urandom -dc '1234567890' | head -c1
+    echo ""
+  )
 
   cp ${sample} ${confFile}
   sed -i "s/#PASSWORD#/${MYSQL_NEXTDOM_PASSWD}/g" ${confFile}
