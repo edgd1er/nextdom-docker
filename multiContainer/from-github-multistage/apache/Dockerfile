@@ -36,7 +36,7 @@ ADD preinst.sh /usr/share/nextdom/install/scripts/
 ADD utils.sh /usr/share/nextdom/install/scripts/
 ADD config.sh /usr/share/nextdom/install/scripts/
 ADD apache/supervisord.conf /usr/share/nextdom/install/
-RUN /bin/bash -x install/install_docker.sh
+RUN /bin/bash -xe install/install_docker.sh
 
 #FROM balenalib/amd64-debian:buster-run as prod
 FROM nextdom-base:latest-amd64 AS prod
@@ -73,8 +73,7 @@ RUN if [ -n ${aptcacher} ]; then echo "Acquire::http::Proxy \"http://${aptcacher
     echo "Acquire::https::Proxy \"http://${aptcacher}:3142\";" >>/etc/apt/apt.conf.d/01proxy ; fi
 RUN apt-get update && apt-get install -y at wget supervisor mariadb-client ntp ca-certificates unzip \
     curl sudo cron tar wget ntpdate htop iotop iftop smbclient python python-pip \
-    software-properties-common libexpat1 ssl-cert apt-transport-https
-RUN apt-get install -y
+    software-properties-common libexpat1 ssl-cert apt-transport-https && apt upgrade -y
 #
 COPY --from=builder /etc/php /etc/php
 COPY --from=builder /etc/cron.d /etc/cron.d
@@ -88,9 +87,9 @@ COPY --chown=www-data:www-data --from=builder /var/log/nextdom/install.log /var/
 RUN rm -Rf /var/www/html && ln -s "/usr/share/nextdom" "/var/www/html" \
  && cat /usr/share/nextdom/assets/config/Nextdom_version;\
  cat /usr/share/nextdom/core/config/Nextdom_version
-RUN echo root:$ROOT_PASSWORD | chpasswd ; \
- apt-get clean autoclean ; apt-get autoremove --yes ; \
- if [ -n ${aptcacher} ]; then rm /etc/apt/apt.conf.d/01proxy ;fi \
+RUN echo "root:$ROOT_PASSWORD" | chpasswd ;
+RUN apt-get clean autoclean ; apt-get autoremove --yes ; \
+ if [ -n ${aptcacher} ]; then rm /etc/apt/apt.conf.d/01proxy ;fi; \
  rm -rf /var/lib/apt/lists/* ; \
  mkdir -p /var/log/supervisor ; \
  update-rc.d apache2 remove; update-rc.d cron remove;exit 0
