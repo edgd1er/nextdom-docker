@@ -26,18 +26,23 @@ TAR=Y
 #use or not apt-cacher
 CACHER="N"
 APTPROXY=""
+#DOCKER cache
+CACHE=""
 #fonctions
 
 # :ahkpuzr
 usage() {
-  echo -e "\n$0: [a,h,k,(u|p),r]\n\twithout option, container is built from github sources for x86 and has no access to devices"
+  echo -e "\n$0: [abcfhkprtuz]\n\twithout option, container is built from github sources for x86 and has no access to devices"
   echo -e "\ta\tBy defaut only own cpu architecture image is build, if set to all, x86 and armhf images will be build"
+  echo -e "\tb\tif set, define nextdom branch to clone"
   echo -e "\tc\tif set, apt-cacher will be use when building image"
+  echo -e "\tf\tif set, docker build cache is flushed"
   echo -e "\th\this help"
   echo -e "\tk\tcontainer volumes are not recreated, but reused ( keep previous data intact)"
   echo -e "\tp\tcontainer has access to all devices (privileged: not recommended)"
+  echo -e "\tr\tif set, the last nextdom release will be build, instead of branch"
   echo -e "\tu\tcontainer has access to ttyUSB0"
-  echo -e "\tr\tuse latest release instead of branch"
+  echo -e "\tz\tMake a zip of nextdom"
   exit 0
 }
 
@@ -142,7 +147,7 @@ source .env
 source envMysql
 
 #getOptions
-while getopts ":ab:chkprtuz" opt; do
+while getopts ":ab:chfkprtuz" opt; do
   case $opt in
   a)
     echo "building only for x86 architecture"
@@ -157,7 +162,10 @@ while getopts ":ab:chkprtuz" opt; do
     CACHER="Y"
     setProxy
     ;;
-
+  f)
+    echo "flush docker cache"
+    CACHE=" --no-cache"
+    ;;
   h)
     usage
     ;;
@@ -227,8 +235,6 @@ else
 fi
 
 # build
-CACHE=""
-#CACHE="--no-cache"
 bVer=""
 bbranch=" --build-arg BRANCHdef=master"
 [[ ! -z ${gitTag} ]] && bVer=" --build-arg VERSIONdef=${gitTag}"
