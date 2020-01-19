@@ -22,29 +22,27 @@ step1_generate_nextdom_assets() {
 
   addLogStep "Preinst -- Generate Assets - 1/7"
   # Generate CSS files
-  if [ "false" == "${PRODUCTION}" ]; then
-    # A faire dans une version developpeur (apres git clone)
-    if [ ! -f ${ROOT_DIRECTORY}/vendor ]; then
-      { ##try
-        cd ${ROOT_DIRECTORY}
-        ./scripts/gen_composer_npm.sh
-      } || { ##catch
-        addLogError "error during composer and npm initialize"
-      }
-    fi
+  # A faire dans une version developpeur (apres git clone)
+  if [ ! -f ${ROOT_DIRECTORY}/vendor ]; then
     { ##try
       cd ${ROOT_DIRECTORY}
-      ./scripts/gen_global.sh
+      ./scripts/gen_composer_npm.sh
     } || { ##catch
-      addLogError "error during asset generation"
+      addLogError "error during composer and npm initialize"
     }
-    addLogInfo "installed nodejs"
-    addLogInfo "installed composer manager"
-    addLogInfo "installed project dependencies"
-    addLogInfo "copied icons, themes and images from assets"
-    addLogInfo "generated css files"
-    addLogInfo "generated javascript files"
   fi
+  { ##try
+    cd ${ROOT_DIRECTORY}
+    ./scripts/gen_global.sh
+  } || { ##catch
+    addLogError "error during asset generation"
+  }
+  addLogInfo "installed nodejs"
+  addLogInfo "installed composer manager"
+  addLogInfo "installed project dependencies"
+  addLogInfo "copied icons, themes and images from assets"
+  addLogInfo "generated css files"
+  addLogInfo "generated javascript files"
   if [ "true" == "${result}" ]; then
     addLogSuccess "Assets are generated with success"
   fi
@@ -57,7 +55,7 @@ step2_configure_mysql() {
 
   addLogStep "Preinst -- Configure MySQL/MariaDB - 2/7"
 
-  if [ "localhost" != "${MYSQL_HOSTNAME}" ]; then
+  if [ "localhost" != "${MYSQL_HOSTNAME}" ] && [ "$(hostname)" != "${MYSQL_HOSTNAME}" ] && [ "$(hostname -I)" != "${MYSQL_HOSTNAME}" ]; then
     addLogInfo "Remote mysql server detected"
     return 0
   fi
@@ -233,6 +231,10 @@ step5_configure_mysql_database() {
   result=true
 
   addLogStep "Preinst -- Configure MySQL/MariaDB - 5/7"
+  if [ "localhost" != "${MYSQL_HOSTNAME}" ] && [ "$(hostname)" != "${MYSQL_HOSTNAME}" ] && [ "$(hostname -I)" != "${MYSQL_HOSTNAME}" ]; then
+    addLogInfo "Remote mysql server detected"
+    return 0
+  fi
 
   if [ -f ${CONFIG_DIRECTORY}/mysql/secret ]; then
     source ${CONFIG_DIRECTORY}/mysql/secret
@@ -289,10 +291,6 @@ EOS
 step6_generate_mysql_structure() {
   result=true
 
-  CONSTRAINT="%"
-  if [ ${MYSQL_HOSTNAME} == "localhost" ]; then
-    CONSTRAINT='localhost'
-  fi
   addLogStep "Preinst -- Generate MySQL/MariaDB structure - 6/7"
 
   CONSTRAINT="%"
