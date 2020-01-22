@@ -3,6 +3,7 @@
 ####################################################################################################
 """Launch NextDom GUI tests
 """
+import os
 import sys
 from tests.libs.tests_funcs import *
 
@@ -20,9 +21,30 @@ def php_tests():
     exec_command_in_container(
         container_name, 'bash /usr/share/nextdom/tests/install_chrome.sh > /dev/null 2>&1')
     exec_command_in_container(
+        container_name, 'echo "ps -aux" && ps -aux')
+    exec_command_in_container(
+        container_name, 'echo "Show database" && mysql -u root -e "SHOW DATABASES"')
+    exec_command_in_container(
+        container_name, 'echo "Show tables" && mysql -u root nextdom -e "SHOW TABLES"')
+    exec_command_in_container(
+        container_name, 'echo "ls /etc/nextdom" && ls -alR /etc/nextdom')
+    exec_command_in_container(
+        container_name, 'cat /etc/nextdom/mysql/secret')
+    exec_command_in_container(
         container_name, 'bash /usr/share/nextdom/tests/load_fixtures.sh --reset')
     exec_command_in_container(
         container_name, 'apt-get install -y php-phpdbg > /dev/null 2>&1')
+    exec_command_in_container(
+        container_name, 'echo "ps -aux" && ps -aux')
+    exec_command_in_container(
+        container_name, 'echo "Show database" && mysql -u root -e "SHOW DATABASES"')
+    exec_command_in_container(
+        container_name, 'echo "Show tables" && mysql -u root nextdom -e "SHOW TABLES"')
+    exec_command_in_container(
+        container_name, 'echo "ls /etc/nextdom" && ls -alR /etc/nextdom')
+    exec_command_in_container(
+        container_name, 'cat /etc/nextdom/mysql/secret')
+    os.system('docker logs ' + container_name)
     return_code = exec_command_in_container(
         container_name, 'bash -c "cd /var/www/html && export PANTHER_NO_SANDBOX=1 && export PANTHER_CHROME_ARGUMENTS=\"--disable-dev-shm-usage\" && phpdbg -d memory_limit=-1 -qrr phpunit --configuration tests/phpunit_tests/phpunit.xml --testsuite AllTests"')  # pylint: disable=line-too-long
     copy_file_from_container(container_name, '/var/www/html/tests/coverage/clover.xml',
