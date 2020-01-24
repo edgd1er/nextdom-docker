@@ -1,9 +1,9 @@
 version: '3.1'
 services:
-  nextdom-web:
+  web:
     devices:
-    #zigate
-    - ${DUSB}
+      #zigate
+      - ${DUSB:-/dev/ttyUSB0}
     #zwave
     #- ${DACM}
     #- ${DAMA}
