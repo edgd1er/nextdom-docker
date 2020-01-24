@@ -84,8 +84,12 @@ step2_prepare_directory_layout() {
   if [ -L ${ROOT_DIRECTORY}/core/config ]; then
     removeDirectoryOrFile ${ROOT_DIRECTORY}/core/config
   fi
-  ln -s ${LIB_DIRECTORY}/config ${ROOT_DIRECTORY}/core/config
-  addLogInfo "created core configuration symlink: ${ROOT_DIRECTORY}/core/config"
+  { ##try
+    ln -s ${LIB_DIRECTORY}/config ${ROOT_DIRECTORY}/core/config
+    addLogInfo "created core configuration symlink: ${ROOT_DIRECTORY}/core/config"
+  } || { ##catch
+    addLogInfo "core/config symlink: ${ROOT_DIRECTORY}/core/config already exists"
+  }
 
   # jeedom backup compatibility:  ./var is a symlink
   if [ -L ${ROOT_DIRECTORY}/var ]; then
@@ -99,8 +103,12 @@ step2_prepare_directory_layout() {
     fi
     removeDirectoryOrFile ${ROOT_DIRECTORY}/var
   fi
-  ln -s ${LIB_DIRECTORY} ${ROOT_DIRECTORY}/var
-  addLogInfo "created var symlink: ${ROOT_DIRECTORY}/var"
+  { ##try
+    ln -s ${LIB_DIRECTORY} ${ROOT_DIRECTORY}/var
+    addLogInfo "created var symlink: ${ROOT_DIRECTORY}/var"
+  } || { ##catch
+    addLogInfo "var symlink: ${ROOT_DIRECTORY}/var already exists"
+  }
 
   # jeedom backup compatibility:  ./core/css is a symlink
   # -> some important plugins like widget are writing direclty to core/css/...
@@ -112,20 +120,32 @@ step2_prepare_directory_layout() {
     mv ${ROOT_DIRECTORY}/core/css/* ${LIB_DIRECTORY}/public/css/
     removeDirectoryOrFile ${ROOT_DIRECTORY}/core/css
   fi
-  ln -s ${LIB_DIRECTORY}/public/css/ ${ROOT_DIRECTORY}/core/css
-  addLogInfo "created core/css symlink: ${ROOT_DIRECTORY}/core/css"
+  { ##try
+    ln -s ${LIB_DIRECTORY}/public/css/ ${ROOT_DIRECTORY}/core/css
+    addLogInfo "created core/css symlink: ${ROOT_DIRECTORY}/core/css"
+  } || { ##catch
+    addLogInfo "core/css symlink: ${ROOT_DIRECTORY}/core/css already exists"
+  }
 
   # jeedom javascript compatibility
   if [ ! -e ${ROOT_DIRECTORY}/core/js ]; then
-    ln -s ${ROOT_DIRECTORY}/assets/js/core/ ${ROOT_DIRECTORY}/core/js
+    { ##try
+      ln -s ${ROOT_DIRECTORY}/assets/js/core/ ${ROOT_DIRECTORY}/core/js
+      addLogInfo "created core/js symlink: ${ROOT_DIRECTORY}/assets/core/js"
+    } || { ##catch
+      addLogInfo "assets/core/js symlink: ${ROOT_DIRECTORY}/assets/core/js already exists"
+    }
   fi
-  addLogInfo "created core/js symlink: ${ROOT_DIRECTORY}/assets/js/core"
 
   # jeedom template location compatibility
   if [ ! -e ${ROOT_DIRECTORY}/core/template ]; then
-    ln -s ${ROOT_DIRECTORY}/views/templates/ ${ROOT_DIRECTORY}/core/template
+    { ##try
+      ln -s ${ROOT_DIRECTORY}/views/templates/ ${ROOT_DIRECTORY}/core/template
+      addLogInfo "created core/template symlink: ${ROOT_DIRECTORY}/core/template"
+    } || { ##catch
+      addLogInfo "core/template symlink: ${ROOT_DIRECTORY}/core/template already exists"
+    }
   fi
-  addLogInfo "created core/template symlink: ${ROOT_DIRECTORY}/core/template"
 
   # jeedom backup compatibility:  ./data is a symlink
   if [ -L ${ROOT_DIRECTORY}/data ]; then
@@ -144,9 +164,13 @@ step2_prepare_directory_layout() {
       removeDirectoryOrFile ${ROOT_DIRECTORY}/data
     fi
     if [ ! -e ${ROOT_DIRECTORY}/data ]; then
-      ln -s ${LIB_DIRECTORY}/data ${ROOT_DIRECTORY}/data
+      { ##try
+        ln -s ${LIB_DIRECTORY}/data ${ROOT_DIRECTORY}/data
+        addLogInfo "created data symlink: ${ROOT_DIRECTORY}/data"
+      } || { ##catch
+        addLogInfo "data symlink: ${ROOT_DIRECTORY}/data already exists"
+      }
     fi
-    addLogInfo "created data symlink: ${ROOT_DIRECTORY}/data"
   } || { ##catch
     addLogError "Error while linking ${ROOT_DIRECTORY}/data"
   }
@@ -156,7 +180,12 @@ step2_prepare_directory_layout() {
       removeDirectoryOrFile ${ROOT_DIRECTORY}/log
     fi
     if [ ! -e ${ROOT_DIRECTORY}/log ]; then
-      ln -s ${LOG_DIRECTORY} ${ROOT_DIRECTORY}/log
+      { ##try
+        ln -s ${LOG_DIRECTORY} ${ROOT_DIRECTORY}/log
+        addLogInfo "created log symlink: ${ROOT_DIRECTORY}/log"
+      } || { ##catch
+        addLogInfo "log symlink: ${ROOT_DIRECTORY}/log already exists"
+      }
     fi
   } || { ##catch
     addLogError "Error while linking ${LOG_DIRECTORY}"
