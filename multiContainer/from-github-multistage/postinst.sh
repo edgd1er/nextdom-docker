@@ -9,12 +9,25 @@ source ${CURRENT_DIR}/utils.sh
 ########################################### NextDom Steps #######################################
 #################################################################################################
 
+step0_prepare_prerequisites() {
+  # Start all services
+  startService apache2
+  addLogInfo "Apache2 service started"
+  startService cron
+  addLogInfo "Cron service started"
+  if [ "localhost" == "${MYSQL_HOSTNAME}" ] || [ "$(hostname -I)" == "${MYSQL_HOSTNAME}" ]; then
+    addLogInfo "Local mysql server detected"
+    startService mysql
+    addLogInfo "MySQL/MariaDB service started"
+  fi
+}
+
 step1_create_prerequisite_files_and_directories() {
   result=true
   addLogStep "Postinst -- Create needed files and directories - 1/12"
 
   local directories=("${ROOT_DIRECTORY}/plugins" "${LIB_DIRECTORY}" "${LIB_DIRECTORY}/market_cache"
-    "${LIB_DIRECTORY}/cache" "${LIB_DIRECTORY}/backup" "${LIB_DIRECTORY}/custom/desktop" "${LIB_DIRECTORY}/public/css"
+    "${LIB_DIRECTORY}/cache" "${LIB_DIRECTORY}/backup" "${LIB_DIRECTORY}/core/config" "${LIB_DIRECTORY}/custom/desktop" "${LIB_DIRECTORY}/public/css"
     "${LIB_DIRECTORY}/public/img/plan" "${LIB_DIRECTORY}/public/img/profils" "${LIB_DIRECTORY}/public/img/market_cache"
     "${LOG_DIRECTORY}/scenarioLog")
 
@@ -273,15 +286,18 @@ step4_create_symLink_var_www_html() {
   result=true
 
   addLogStep "Postinst -- Configure symbolic links - 4/12"
+  if [ "${ROOT_DIRECTORY}" != "${APACHE_HTML_DIRECTORY}" ]; then
+    { ##try
+      ln -s "${ROOT_DIRECTORY}" ${APACHE_HTML_DIRECTORY}
+    } || { ##catch
+      addLogError "Error while linking ${ROOT_DIRECTORY} to ${APACHE_HTML_DIRECTORY}"
+    }
 
-  { ##try
-    ln -s "${ROOT_DIRECTORY}" ${APACHE_HTML_DIRECTORY}
-  } || { ##catch
-    addLogError "Error while linking ${ROOT_DIRECTORY} to ${APACHE_HTML_DIRECTORY}"
-  }
-
-  if [ "true" == "${result}" ]; then
-    addLogSuccess "${ROOT_DIRECTORY} linked with success to ${APACHE_HTML_DIRECTORY}"
+    if [ "true" == "${result}" ]; then
+      addLogSuccess "${ROOT_DIRECTORY} linked with success to ${APACHE_HTML_DIRECTORY}"
+    fi
+  else
+    addLogSuccess "${ROOT_DIRECTORY} don't need to be linked to ${APACHE_HTML_DIRECTORY}"
   fi
 }
 
@@ -338,12 +354,12 @@ step6_configure_nextdom() {
       echo ""
     )
     # Add a special char
-    SECRET_KEY=$SECRET_KEY$(
-      tr </dev/urandom -dc '*&!@#' | head -c1
+    SECRET_KEY=${SECRET_KEY}$(
+      tr </dev/urandom -dc '!@#' | head -c1
       echo ""
     )
     # Add numeric char
-    SECRET_KEY=$SECRET_KEY$(
+    SECRET_KEY=${SECRET_KEY}$(
       tr </dev/urandom -dc '1234567890' | head -c1
       echo ""
     )
@@ -580,11 +596,7 @@ postinstall_nextdom() {
 
   addLogScript "============ Starting postinst.sh ============"
 
-  # Start all services
-  startService apache2
-  startService cron
-  startService mysql
-
+  step0_prepare_prerequisites
   step1_create_prerequisite_files_and_directories
   step2_prepare_directory_layout
   step3_configure_mysql
