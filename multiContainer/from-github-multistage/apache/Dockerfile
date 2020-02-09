@@ -20,15 +20,16 @@ RUN echo "builder param branch: ${BRANCH} / version: ${VERSION} / tarBall: ${TAR
 RUN if [ ! -z ${aptcacher} ]; then echo "Acquire::http::Proxy \"http://${aptcacher}:3142\";" >/etc/apt/apt.conf.d/01proxy ; \
     echo "Acquire::https::Proxy \"http://${aptcacher}:3142\";" >>/etc/apt/apt.conf.d/01proxy ; fi
 WORKDIR /usr/share/nextdom/
-#COPY nextdom-core-${VERSION}.tar.gz /usr/share/nextdom/nextdom.tar.gz
+COPY nextdom-core-${VERSION}.tar.gz /usr/share/nextdom/nextdom.tar.gz
 RUN mkdir -p /usr/share/nextdom /var/www/html/ && \
     cd /usr/share/nextdom && \
     if [ "none" != "${TAR}" -a ! -f nextdom.tar.gz ]; then echo "dl tar + unzip"; wget -O nextdom.tar.gz ${TAR};fi ;\
-    if [ -f nextdom.tar.gz ]; then tar -zxvf nextdom.tar.gz --strip-components=1 ; rm nextdom.tar.gz ;fi ; \
-    if [ "b" != "b${VERSION}" ]; then echo "cloning and checkouting tag: ${VERSION} / ${URLGIT}"; git clone --depth 1 -b master ${URLGIT} . ; git fetch --tags ; git checkout $VERSION;fi;  \
-    if [ -n ${BRANCH} -a -z "$(ls -A .)" ]; then echo "cloning and checkouting branch: ${BRANCH} / ${URLGIT}"; git clone --depth 1 -b ${BRANCH} ${URLGIT} . ; fi
-RUN cd /usr/share/nextdom; if [  -z "$(ls -A .)" ]; then echo "cloning depot"; git clone --depth 1 -b ${BRANCH:-master} $URLGIT . ;fi;\
-  cat /usr/share/nextdom/assets/config/Nextdom_version
+    # if release version exists and not wanting a specific branch
+    if [ -f nextdom.tar.gz ]; then if [ "${BRANCH}" != "master" || "${TAG}" != ""  ]; then tar -zxvf nextdom.tar.gz --strip-components=1 ; fi;rm nextdom.tar.gz ;fi ; \
+    if [ "b" != "b${VERSION}" -a -z "$(ls -A .)" ]; then echo "cloning and checkouting tag: ${VERSION} / ${URLGIT}"; git clone --depth 1 -b master ${URLGIT} . ; git fetch --tags ; git checkout $VERSION;fi;
+RUN if [ -n "${BRANCH}" -a -z "$(ls -A .)" ]; then echo "cloning and checkouting branch: ${BRANCH} / ${URLGIT}"; git clone --depth 1 -b ${BRANCH} ${URLGIT} . ; fi
+RUN    cd /usr/share/nextdom; if [  -z "$(ls -A .)" ]; then echo "cloning depot"; git clone --depth 1 -b ${BRANCH:-master} $URLGIT . ;fi;
+RUN  ls -alR && cat /usr/share/nextdom/assets/config/Nextdom_version
 #temp correction
 ADD install_docker.sh /usr/share/nextdom/install/
 ADD postinst.sh /usr/share/nextdom/install/scripts/
