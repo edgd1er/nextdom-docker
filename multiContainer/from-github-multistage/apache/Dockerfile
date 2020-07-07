@@ -94,7 +94,7 @@ RUN rm -Rf /var/www/html && ln -s "/usr/share/nextdom" "/var/www/html" \
  cat /usr/share/nextdom/core/config/Nextdom_version
 RUN echo "root:$ROOT_PASSWORD" | chpasswd ;
 RUN apt-get clean autoclean ; apt-get autoremove --yes ; \
- if [ -n ${aptcacher} ]; then rm /etc/apt/apt.conf.d/01proxy ;fi; \
+ if [ -f /etc/apt/apt.conf.d/01proxy ]; then rm /etc/apt/apt.conf.d/01proxy ;fi; \
  rm -rf /var/lib/apt/lists/* ; \
  mkdir -p /var/log/supervisor ; \
  update-rc.d apache2 remove; update-rc.d cron remove;exit 0
