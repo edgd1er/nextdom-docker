@@ -46,6 +46,16 @@ usage() {
   exit 0
 }
 
+setBuildx() {
+  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  isArmReady=$(docker buildx ls | grep amd-arm0 | grep -c arm/v7)
+  if [ $isArmReady -eq 0 ]; then
+    docker buildx rm amd-arm 2>/dev/null
+    docker buildx create --use --name amd-arm --platform=linux/amd64,linux/arm64,linux/386,linux/arm/v7,linux/arm/v6
+    docker buildx inspect --bootstrap amd-arm
+  fi
+}
+
 generateCert() {
   echo -e "<I> Creating SSL self-signed certificat in /etc/nextdom/ssl/"
   if [ ! -d "${SSLDIR}" ]; then

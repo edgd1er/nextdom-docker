@@ -8,3 +8,4 @@ MYSQL_HOST=mysql
 MYSQL_DATABASE=nextdomdb
 MYSQL_USER=nextdom_user
 MYSQL_PASSWORD=changeIt
+MYSQL_PORT=3306

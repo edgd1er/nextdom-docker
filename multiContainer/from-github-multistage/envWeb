@@ -1,7 +1,7 @@
 # variables available inside the container at runtime
 TZ=Europe/Paris
 ROOT_PASSWORD=changeitToo
-# name of the service for netxdom to access its db
+# names are due to nextdom postinst
 MYSQL_HOSTNAME=mysql
 MYSQL_PORT=3306
 MYSQL_NEXTDOM_DB=nextdomdb

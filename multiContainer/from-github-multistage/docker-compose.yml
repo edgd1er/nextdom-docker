@@ -1,19 +1,21 @@
 version: '3.1'
 services:
   web:
+    image: edgd1er/nextdom-web:latest
+    #image: edgd1er/nextdom-web.slim:latest
+    #build:
+    #      dockerfile: apache/Dockerfile
+    #      context: .
+    #      args:
+    #      - initShdef=$initSh
+    #      - PHPVERdef=$PHPVER
+    #      - VERSIONdef=$VERSION
+    #      - BRANCHdef=$BRANCH
+    #      - aptcacher=""
+    #command: ["/root/init.sh"]
     env_file:
       - envWeb
       - .env
-    image: edgd1er/nextdom-web:latest-amd64
-    #build:
-#      dockerfile: apache/Dockerfile
-#      context: .
-#      args:
-#      - initShdef=$initSh
-#      - PHPVERdef=$PHPVER
-#      - VERSIONdef=$VERSION
-#      - BRANCHdef=$BRANCH
-#      - aptcacher=""
     environment:
       - POSTINST_DEBUG=-v
     restart: unless-stopped
@@ -21,6 +23,10 @@ services:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
       interval: 10s
       timeout: 10s
+    networks:
+      nextdom_network:
+        aliases:
+          - web
     labels:
       - com.centurylinklabs.watchtower.enable=false
     expose:
@@ -41,33 +47,42 @@ services:
       - mysql
 
   mysql:
+    image: mariadb/server
+    #build:
+    #  dockerfile: Dockerfile.mysql
+    #  context: .
+    restart: unless-stopped
     env_file:
       - envMysql
-    #image: mysql/mysql-server:5.7
-    ##image: mysql/mysql-server:8.0
-    build:
-      dockerfile: Dockerfile.mysql
-      context: .
-    restart: unless-stopped
     expose:
       - "3306"
     ports:
-      - "3326:3306"
+      - "3336:3306"
     #volumes:
     #  - mysqldata-prod:/var/lib/mysql
+    networks:
+      nextdom_network:
+        aliases:
+          - mysql
 
   nextdom-adminer:
     image: adminer
     restart: unless-stopped
     ports:
       - "9281:8080"
+    networks:
+      nextdom_network:
+        aliases:
+          - adminer
 
 volumes:
   mysqldata-prod:
   #    external: true
   wwwdata-prod:
-#    external: true
+  #    external: true
   tmptmpfs:
-      driver_opts:
-        device: tmpfs
-        type: tmpfs
+    driver_opts:
+      device: tmpfs
+      type: tmpfs
+networks:
+  nextdom_network:

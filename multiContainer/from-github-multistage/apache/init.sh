@@ -1,6 +1,12 @@
 #!/bin/bash
 echo 'Start init'
 
+WEBSERVER_HOME=usr/share/nextdom
+LIB_DIRECTORY=/var/lib/nextdom
+LOG_DIRECTORY=var/log/nextdom
+TMP_DIRECTORY=/tmp/nextdom
+DEBUG=/tmp/nextdom.log
+
 #Functions
 makeZip() {
   echo makeZip $1
@@ -15,13 +21,8 @@ makeZip() {
 }
 
 define_nextom_mysql_credentials() {
-  # recreate configuration from sample
   # has to be done here for docker flexibility (config a runtime, not a build time)
-  WEBSERVER_HOME=${WEBSERVER_HOME:-/usr/share/nextdom}
-  LIB_DIRECTORY=${LIB_DIRECTORY:-/var/lib/nextdom}
-  LOG_DIRECTORY=${LOG_DIRECTORY:-/var/log/nextdom}
-  TMP_DIRECTORY=${TMP_DIRECTORY:-/tmp/nextdom}
-
+  # recreate configuration from sample
   cd ${WEBSERVER_HOME}/core/config/
   sample=${WEBSERVER_HOME}/assets/config/common.config.sample.php
   confFile=${WEBSERVER_HOME}/core/config/common.config.php
@@ -45,11 +46,11 @@ define_nextom_mysql_credentials() {
   )
 
   cp ${sample} ${confFile}
-  sed -i "s/#PASSWORD#/${MYSQL_NEXTDOM_PASSWD}/g" ${confFile}
-  sed -i "s/#DBNAME#/${MYSQL_NEXTDOM_DB}/g" ${confFile}
-  sed -i "s/#USERNAME#/${MYSQL_NEXTDOM_USER}/g" ${confFile}
-  sed -i "s/#PORT#/${MYSQL_PORT}/g" ${confFile}
-  sed -i "s/#HOST#/${MYSQL_HOSTNAME}/g" ${confFile}
+  sed -i "s/#PASSWORD#/${MYSQL_NEXTDOM_PASSWD:-nextdom}/g" ${confFile}
+  sed -i "s/#DBNAME#/${MYSQL_NEXTDOM_DB:-nextdom}/g" ${confFile}
+  sed -i "s/#USERNAME#/${MYSQL_NEXTDOM_USER:-nextdom}/g" ${confFile}
+  sed -i "s/#PORT#/${MYSQL_PORT:-3306}/g" ${confFile}
+  sed -i "s/#HOST#/${MYSQL_HOSTNAME:-localhost}/g" ${confFile}
   sed -i "s%#LOG_DIR#%${LOG_DIRECTORY}%g" ${confFile}
   sed -i "s%#LIB_DIR#%${LIB_DIRECTORY}%g" ${confFile}
   sed -i "s%#TMP_DIR#%${TMP_DIRECTORY}%g" ${confFile}
@@ -108,6 +109,7 @@ else
   define_nextom_mysql_credentials
   waitForMysql
   createSchemaIfNeeded
+  php ${WEBSERVER_HOME}/scripts/sick.php >>${DEBUG} 2>&1
   touch /var/www/html/_nextdom_is_installed
   #cd /root/export/
   #makeZip nextdom-${VERSION}.tar.gz
