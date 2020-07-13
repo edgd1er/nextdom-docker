@@ -132,4 +132,5 @@ DerivedData/
 .git/**
 
 #backup
-backup*.gz
+
+/multiContainer/from-github-multistage/backup*.gz

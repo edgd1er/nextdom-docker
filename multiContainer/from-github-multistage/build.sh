@@ -13,14 +13,12 @@ RELEASE=N
 #Define dockerfile and compose
 YML=docker-compose.yml
 DKRFILE=${localDir}/apache/Dockerfile.all
-PTF="linux/amd64"
+#PTF="linux/amd64"
+PTF="linux/arm/v7"
 #get cpu architecture
 ARCHI=$(dpkg --print-architecture)
 #set image architecture to build, by default only x86
 TARGETARCHI="x86"
-#image to build
-BUILDARM=N
-BUILDX86=Y
 #use git instead of git tarball =N
 TAR=Y
 #use or not apt-cacher
@@ -109,7 +107,6 @@ updateEnvWebRelease() {
   fi
 }
 
-
 setProxy() {
   myIp=$(ip route get 1 | awk '{print $7}')
   APTPROXY="--build-arg aptcacher=${myIp}"
@@ -122,11 +119,11 @@ source .env
 source envMysql
 
 #getOptions
-while getopts ":ab:chfkprtuz" opt; do
+while getopts ":ab:chfkprtuw:z" opt; do
   case $opt in
   a)
     echo "building only for x86 architecture"
-    TARGETARCHI="x86"
+    TARGETARCHI="all"
     ;;
   b)
     BRANCH=$OPTARG
@@ -192,13 +189,11 @@ if [ "${ARCHI}" == "armhf" ]; then
   PTF="linux/arm/v7"
 fi
 
-if [ "${ARCHI}" == "amd" ]; then
+if [ "${ARCHI}" == "amd64" ]; then
   echo -e "\n${ARCHI} will be build"
   PTF="linux/amd64"
-  # sinon build x86 image
-  BUILDX86=Y
   # and armhf if needed
-  [[ "${TARGETARCHI}" == "all" ]] && echo -e "\n and also armhf." && PTF=,"linux/arm/v7"
+  [[ "${TARGETARCHI}" == "all" ]] && echo -e "\n and also armhf." && PTF+=,"linux/arm/v7"
 fi
 
 #generate ARM dockerfile
@@ -221,23 +216,13 @@ bbranch=" --build-arg BRANCHdef=master"
 [[ -z ${gitTag} ]] && bbranch=" --build-arg BRANCHdef=${BRANCH}" && gitTarBall="" &&
   echo "using branch: ${BRANCH}, tag: $gitTag, URL:${URLGIT}, init: ${initSh} tarBall:${gitTarBall}"
 
-#if on a amd64 architecture try to cross build armhf version
-if [ "${ARCHI}" == "amd64" ] && [ "${TARGETARCHI}" == "all" ]; then
-  YML2=docker-compose-armhf.yml
-  BUILDARM=Y
-fi
-
 if [ "${TAR}" = 'N' ]; then gitTarBall=''; fi
 
 #Build image according to architecture
-[[ ${BUILDX86} == "Y" ]] && {
-  # prepare parent image used for building and running
-  #CACHE="--no-cache"
-  #build target build +prod
-  docker buildx build ${WHERE} -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg MYSQL_HOSTNAME=notLocalhost --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg MYSQL_HOSTNAME=notLocalhost --build-arg POSTINST_DEBUG=1 --platform=${PTF} -t edgd1er/nextdom-web .
-  #[[ $? -ne 0 ]] && ( echo "Error, aborted building nextdom-web:latest-amd64" && exit )
-}
-
+#CACHE="--no-cache"
+#build target build +prod
+docker buildx build ${WHERE} --progress plain -f ${DKRFILE} ${CACHE} ${bbranch} ${bVer} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg MYSQL_HOSTNAME=notLocalhost --build-arg URLGITdef=${URLGIT} --build-arg initShdef=${initSh} --build-arg TARdef=${gitTarBall} --build-arg PHPVERdef=7.3 ${APTPROXY} --build-arg MYSQL_HOSTNAME=notLocalhost --build-arg POSTINST_DEBUG=1 --platform ${PTF} -t edgd1er/nextdom-web .
+#[[ $? -ne 0 ]] && ( echo "Error, aborted building nextdom-web:latest-amd64" && exit )
 
 #Place tags
 #[[ ${BUILDX86} == "Y" ]] && echo "tagging amd64 image" && docker tag nextdom-web:latest-amd64 edgd1er/nextdom-web:latest-amd64
