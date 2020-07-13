@@ -1,7 +1,7 @@
 #!/bin/bash
 echo 'Start init'
 
-WEBSERVER_HOME=usr/share/nextdom
+WEBSERVER_HOME=/usr/share/nextdom
 LIB_DIRECTORY=/var/lib/nextdom
 LOG_DIRECTORY=var/log/nextdom
 TMP_DIRECTORY=/tmp/nextdom
