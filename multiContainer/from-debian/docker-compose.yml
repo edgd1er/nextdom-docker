@@ -1,30 +1,20 @@
-version: '3.1'
+version: '3.6'
 services:
-  web-deb:
-    #image: nextdom-web-deb/latest
-    build:
-      dockerfile: Dockerfile
-      context: .
-      args:
-        - MODE=0
-        #- http_proxy=http://$myIp:3142
-        #- https_proxy=http://$myIp:3142
-    image: edgd1er/nextdom-web:deb-x86
+  web:
+    image: edgd1er/nextdom-web-deb:latest
     restart: unless-stopped
     healthcheck:
       test: ["CMD","curl","-f","http://localhost/public/here.html"]
       interval: 10s
       timeout: 10s
     expose:
-      - "22"
       - "80"
       - "443"
-      - "3306"
     ports:
-      - "${HTTPMAP}"
-      - "${HTTPSMAP}"
+      - "9180:80"
+      - "9543:443"
     environment:
-      - TZ=${TZDATA}
+      - TZ=Europe/Paris
       - MYSQL_ROOT=changeIt
       - MYSQL_HOSTNAME=mysql
       - MYSQL_PORT=3306
@@ -40,6 +30,7 @@ services:
     #image: mysql/mysql-server:5.7
     image: mariadb
     environment:
+      - MYSQL_ROOT_HOST=%
       - MYSQL_ROOT_PASSWORD=changeIt
       - MYSQL_DATABASE=nextdomTest
       - MYSQL_USER=nextdom_user
@@ -52,7 +43,7 @@ services:
     #volumes:
     #  - mysqldata-prod:/var/lib/mysql
 
-  nextdom-adminer:
+  adminer:
     image: adminer
     restart: unless-stopped
     ports:

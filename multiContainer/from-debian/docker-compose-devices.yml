@@ -2,8 +2,9 @@ version: '3.1'
 services:
   nextdom-deb:
     devices:
-    #zigate
-    - ${DUSB}
+    #Devices to access if -u is used, please update docker-compose-devices.yml to use device you set.
+    #Zigate
+    - DUSB=/dev/ttyUSB0:/dev/ttyUSB0
     #zwave
-    #- ${DACM}
-    #- ${DAMA}
+    - DACM=/dev/ttyACM0:/dev/ttyACM0
+    - DAMA=/dev/ttyAMA0:/dev/ttyAMA0
