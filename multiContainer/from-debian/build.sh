@@ -20,17 +20,32 @@ WHERE="--load"
 
 #fonctions
 usage() {
-  echo -e "\n$0: [d,m,(u|p)]\n\twithout option, container is built from nextdom's debian packages and has no access to devices"
-  echo -e "\td\tcontainer is in demo mode, php modules are disabled to limit surface of attack when nextdom is exposed to unknown users/testers."
+  echo -e "\n$0: [a,c,f,h,k,(p|u),w]\n\twithout option, container is built from nextdom's debian packages and has no access to devices"
+  echo -e "\ta\tBy defaut only own cpu architecture image is build, if set to all, x86 and armhf images will be build"
+  echo -e "\tc\tif set, apt-cacher will be use when building image"
+  echo -e "\tf\tif set, docker build cache is flushed"
+  echo -e "\th\this help"
+  echo -e "\tk\tcontainer volumes are not recreated, but reused ( keep previous data intact)"
   echo -e "\tp\tcontainer has access to all devices (privileged: not recommended)"
   echo -e "\tu\tcontainer has access to ttyUSB0"
-  echo -e "\th\tThis help"
+  echo -e "\tw\tWhere to send image (buildx): \"load\" into \"docker\" or push to send to registry"
   exit 0
 }
 
 setProxy() {
   myIp=$(ip route get 1 | awk '{print $7}')
   APTPROXY="--build-arg aptcacher=${myIp}"
+}
+
+buildx() {
+  ddocker=$(grep -c buildKit /etc/docker/daemon.json)
+  cdocker=$(grep -c experimental ~/.docker/config.json)
+  [[ $ddocker == 0 ]] && echo "Buildkit is not enabled in docker's daemon"
+  [[ $cdocker == 0 ]] && echo "experimental is not enabled in docker's client"
+  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  docker buildx rm amd-arm
+  docker buildx create --use --name amd-arm --platform=linux/amd64,linux/arm64,linux/386,linux/arm/v7,linux/arm/v6
+  docker buildx inspect --bootstrap amd-arm
 }
 
 #Main
@@ -89,7 +104,11 @@ if [ "${ARCHI}" == "amd64" ]; then
   echo -e "\n${ARCHI} will be build"
   PTF="linux/amd64"
   # and armhf if needed
-  [[ "${TARGETARCHI}" == "all" ]] && echo -e "\n and also armhf." && PTF+=,"linux/arm/v7"
+  if [[ "${TARGETARCHI}" == "all" ]]; then
+    echo -e "\n and also armhf."
+    PTF+=,"linux/arm/v7"
+    [[ $(docker buildx ls | grep -c arm/v7) -eq 0 ]] && buildx
+  fi
 fi
 
 #docker-compose -f ${YML} build ${CACHE} --build-arg MODE=${MODE} --build-arg http_proxy=http://${myIp}:3142/ --build-arg https_proxy=http://${myIp}:3142/ web-deb

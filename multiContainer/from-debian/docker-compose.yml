@@ -21,6 +21,9 @@ services:
       - MYSQL_NEXTDOM_DB=nextdomTest
       - MYSQL_NEXTDOM_USER=nextdom_user
       - MYSQL_NEXTDOM_PASSWD=changeIt
+    volumes:
+      - ./:/root/export/
+        - tmptmpfs:/tmp/
     #    stdin_open: true
     #    tty: true
     depends_on:
